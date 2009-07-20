@@ -1,0 +1,36 @@
+LSB configuration for buildbot
+------------------------------
+
+The current buildbot settings and scripts are stored here.  There are
+currently two types of files here:
+
+ - master.cfg, the master configuration for buildbot
+
+ - the files in slavescripts, which are expected to be copied to every
+   build slave somewhere in the PATH
+
+The setup procedure for completely rebuilding the buildbot config is
+as follows:
+
+1.  On the master, set up buildbot and create a master according to
+the directions in the documentation.
+
+2.  Copy or symlink master.cfg from this project as the master.cfg for
+the new master.
+
+3.  Install the tools needed for building all projects in the SDK on
+the slaves.  At minimum, that will include bzr.
+
+4,  Set up buildbot on the slave, and create a slave instance
+according to the buildbot documentation.
+
+5.  Give password-less access via sudo to /usr/bin/rpm for the
+buildbot user.  The builds will require the buildbot to install and
+remove packages.
+
+6.  Copy the scripts in this project's "slavescripts" directory into
+the path.
+
+At that point, you should be able to start both the master and the
+slaves.  Force each job, or let them run as scheduled, to make sure
+you didn't miss anything.
