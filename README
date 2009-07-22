@@ -31,6 +31,9 @@ remove packages.
 6.  Copy the scripts in this project's "slavescripts" directory into
 the path.
 
+7.  Download a copy of the current released LSB SDK bundle tarball to
+the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz.
+
 At that point, you should be able to start both the master and the
 slaves.  Force each job, or let them run as scheduled, to make sure
 you didn't miss anything.
