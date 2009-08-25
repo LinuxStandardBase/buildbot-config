@@ -2,10 +2,10 @@
 
 PKG_DIR=$1
 
-SDK_PKGS="lsb-build-base lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-qt4 lsb-makelsbpkg"
+SDK_PKGS="lsb-build-base lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-qt4"
 
 sudo rpm -e $SDK_PKGS || true
 
 for pkg in $SDK_PKGS; do
-  find $PKG_DIR -name $pkg\*.rpm -print | xargs sudo rpm -ivh
+  find $PKG_DIR -name $pkg\*.rpm -print | grep -v src.rpm | xargs sudo rpm -ivh
 done
