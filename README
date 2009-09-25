@@ -4,7 +4,8 @@ LSB configuration for buildbot
 The current buildbot settings and scripts are stored here.  There are
 currently two types of files here:
 
- - master.cfg, the master configuration for buildbot
+ - lsb_master.cfg and moblin_master.cfg, the master configuration for
+   buildbot
 
  - the files in slavescripts, which are expected to be copied to every
    build slave somewhere in the PATH
@@ -12,16 +13,17 @@ currently two types of files here:
 The setup procedure for completely rebuilding the buildbot config is
 as follows:
 
-1.  On the master, set up buildbot and create a master according to
-the directions in the documentation.
+1.  On the master, set up buildbot and create two masters according to
+the directions in the documentation.  One will be for LSB; the other
+will be for Moblin.
 
-2.  Copy or symlink master.cfg from this project as the master.cfg for
-the new master.
+2.  Copy or symlink each foo_master.cfg from this project as
+master.cfg in each new master.
 
 3.  Install the tools needed for building all projects in the SDK on
 the slaves.  At minimum, that will include bzr.
 
-4,  Set up buildbot on the slave, and create a slave instance
+4.  Set up buildbot on each slave, and create a slave instance
 according to the buildbot documentation.
 
 5.  Give password-less access via sudo to /usr/bin/rpm for the
@@ -34,6 +36,6 @@ the path.
 7.  Download a copy of the current released LSB SDK bundle tarball to
 the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz.
 
-At that point, you should be able to start both the master and the
+At that point, you should be able to start both the masters and the
 slaves.  Force each job, or let them run as scheduled, to make sure
 you didn't miss anything.
