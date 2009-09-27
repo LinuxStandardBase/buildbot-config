@@ -21,20 +21,40 @@ will be for Moblin.
 master.cfg in each new master.
 
 3.  Install the tools needed for building all projects in the SDK on
-the slaves.  At minimum, that will include bzr.
+the slaves.  At minimum, that will include bzr and the base
+development tools.
 
-4.  Set up buildbot on each slave, and create a slave instance
-according to the buildbot documentation.
+4.  Create a "buildbot" user.  Make sure the account is locked however
+that works for the distribution being used.
 
-5.  Give password-less access via sudo to /usr/bin/rpm for the
+5.  Install buildbot on each slave.  This will likely require
+installing Twisted.  Be sure to install the core, Mail, Web, and
+Words.
+
+6.  Create a slave instance according to the buildbot documentation as
+the buildbot user.  Be sure and pass the argument "--umask=022" to the
+create-slave command, so the permissions on the resulting packages
+aren't too restrictive.
+
+7.  Give password-less access via sudo to the rpm command for the
 buildbot user.  The builds will require the buildbot to install and
-remove packages.
+remove packages.  Something like this should do:
 
-6.  Copy the scripts in this project's "slavescripts" directory into
+buildbot ALL=NOPASSWD: /bin/rpm
+
+8.  Copy the scripts in this project's "slavescripts" directory into
 the path.
 
-7.  Download a copy of the current released LSB SDK bundle tarball to
-the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz.
+9.  Download a copy of the current released LSB SDK bundle tarball to
+the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz (for the
+buildbot user).
+
+10. Add the command to start the slave on reboot.  If you installed
+buildbot on the slave via a distro package, this may be set up
+already; see your distro's buildbot docs.  If not, a line like this in
+buildbot's crontab should do the trick:
+
+@reboot buildbot start /path/to/slave
 
 At that point, you should be able to start both the masters and the
 slaves.  Force each job, or let them run as scheduled, to make sure
