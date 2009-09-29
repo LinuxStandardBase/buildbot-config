@@ -32,7 +32,7 @@ class LSBBuildCommand(ShellCommand):
 class LSBBuildPackage(LSBBuildCommand):
     def __init__(self, **kwargs):
         if "command" not in kwargs:
-            kwargs["command"] = "cd package && make rpm_package"
+            kwargs["command"] = "cd package && make BUILD_NO_DEB=1"
         ShellCommand.__init__(self, **kwargs)
 
 # Automate some of the packaging build.  When using this, be sure to check
