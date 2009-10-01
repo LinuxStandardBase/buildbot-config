@@ -1,0 +1,29 @@
+#!/bin/sh -e
+
+master_path=/data/buildbot/master_lsb
+snapshot_path=/data/buildbot/lsb-snapshots
+
+projects="app-checker azov-qt3-tests azov-qt4-tests azov-xml2-tests desktop-test dtk-manager libstdcpp-test lsb-setup lsb-xvfb lsbappchk-perl lsbappchk-python lsbappchk-sh lsbappchk lsbsi-tools makelsbpkg olver-core-tests perl-test printing-test python-test qmtest-harness runtime-test t2c-cpp-tests t2c-desktop-tests task-pkgs tet-harness xts5-test lsbarchk lsbcmdchk lsbdev-runner lsblibchk lsbpkgchk"
+
+cd $snapshot_path
+
+for prj in $projects; do
+    echo $prj
+    rm -rf $prj
+    mkdir $prj
+    cd $prj
+
+    for f in $master_path/$prj-results-*tar.gz; do
+	tar xzf $f
+	ls results/*.rpm | egrep -v src.rpm | (while read ff; do mv $ff .; done) || true
+	rm -rf results
+    done
+
+    if [ -f $master_path/$prj-results-x86_64.tar.gz ]; then
+        tar xzf $master_path/$prj-results-x86_64.tar.gz
+        mv results/*src.rpm . || true
+        rm -rf results
+    fi
+
+    cd ..
+done
