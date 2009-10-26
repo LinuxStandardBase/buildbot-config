@@ -1,0 +1,12 @@
+#!/bin/sh
+
+CONFIG_PATH=/data/buildbot/config
+SNAPSHOT_PATH=/data/buildbot/lsb-snapshots
+UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp/pub/lsb/snapshots-test
+
+cd $SNAPSHOT_PATH
+
+$CONFIG_PATH/update-snapshot-sdk
+$CONFIG_PATH/update-snapshot-prj
+
+rsync -a --delete * $UPLOAD_TARGET

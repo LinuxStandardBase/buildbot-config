@@ -8,20 +8,20 @@ projects="app-checker azov-qt3-tests azov-qt4-tests azov-xml2-tests desktop-test
 cd $snapshot_path
 
 for prj in $projects; do
-    echo $prj
+    #echo $prj
     rm -rf $prj
     mkdir $prj
     cd $prj
 
     for f in $master_path/$prj-results-*tar.gz; do
 	tar xzf $f
-	ls results/*.rpm | egrep -v src.rpm | (while read ff; do mv $ff .; done) || true
+	ls results/*.rpm 2>/dev/null | egrep -v src.rpm | (while read ff; do mv $ff .; done) || true
 	rm -rf results
     done
 
     if [ -f $master_path/$prj-results-x86_64.tar.gz ]; then
         tar xzf $master_path/$prj-results-x86_64.tar.gz
-        mv results/*src.rpm . || true
+        mv results/*src.rpm . 2>/dev/null || true
         rm -rf results
     fi
 
