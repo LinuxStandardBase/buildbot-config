@@ -5,9 +5,10 @@ PKG_DIR=$1
 SDK_PKGS="lsb-build-base lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-qt4"
 
 for pkg in $SDK_PKGS; do
-  sudo rpm --nodeps -e $pkg || true
+  sudo rpm --nodeps --allmatches -e $pkg || true
 done
 
 for pkg in $SDK_PKGS; do
-  find $PKG_DIR -name $pkg\*.rpm -print | grep -v src.rpm | xargs sudo rpm -ivh
+  find $PKG_DIR -name $pkg\*.rpm -print | grep -v src.rpm | \
+    xargs sudo rpm -Uvh --force
 done
