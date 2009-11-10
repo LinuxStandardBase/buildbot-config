@@ -2,7 +2,7 @@
 
 CONFIG_PATH=/data/buildbot/config
 SNAPSHOT_PATH=/data/buildbot/lsb-snapshots
-UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp/pub/lsb/snapshots-test
+UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp/pub/lsb/snapshots
 
 cd $SNAPSHOT_PATH
 
