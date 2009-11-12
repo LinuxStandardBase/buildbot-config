@@ -1,12 +1,34 @@
-#!/bin/sh
+#!/bin/sh -e
 
 SCRIPT_PATH=$(dirname $0)
 TOP_PATH=/data/buildbot/lsb-snapshots
 SNAPSHOT_PATH=snapshots
 UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp/pub/lsb
 
+BZR_PROGRESS_BAR=none
+FTP_ROOT=$TOP_PATH
+FTP_LSB_PATH=.
+BUILD_DEBIAN=yes
+DEB_PKG_CACHE=/data/buildbot/debcache-snapshot
+LSB_VERSION=snapshot
+export BZR_PROGRESS_BAR FTP_ROOT FTP_LSB_PATH BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
+
 $SCRIPT_PATH/update-snapshot-sdk
 $SCRIPT_PATH/update-snapshot-prj
 
+cd $TOP_PATH
+bzr checkout http://bzr.linuxfoundation.org/lsb/devel/repogen
+cd repogen
+make -s snapshot
+make -s install-snapshot
+cd ..
+rm -rf repogen
+
 cd $TOP_PATH/$SNAPSHOT_PATH
 rsync -a --delete * $UPLOAD_TARGET/$SNAPSHOT_PATH
+cd $TOP_PATH/repositories/yum/lsb-snapshot
+rsync -a --delete * $UPLOAD_TARGET/repositories/yum/lsb-snapshot
+cd $TOP_PATH/repositories/debian/pkgs-snapshot
+rsync -a --delete * $UPLOAD_TARGET/repositories/debian/pkgs-snapshot
+cd $TOP_PATH/repositories/debian/dists/lsb-snaphot
+rsync -a --delete * $UPLOAD_TARGET/repositories/debian/dists/lsb-snapshot
