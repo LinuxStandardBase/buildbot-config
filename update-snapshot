@@ -30,5 +30,5 @@ cd $TOP_PATH/repositories/yum/lsb-snapshot
 rsync -a --delete * $UPLOAD_TARGET/repositories/yum/lsb-snapshot
 cd $TOP_PATH/repositories/debian/pkgs-snapshot
 rsync -a --delete * $UPLOAD_TARGET/repositories/debian/pkgs-snapshot
-cd $TOP_PATH/repositories/debian/dists/lsb-snaphot
+cd $TOP_PATH/repositories/debian/dists/lsb-snapshot
 rsync -a --delete * $UPLOAD_TARGET/repositories/debian/dists/lsb-snapshot
