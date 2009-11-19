@@ -27,3 +27,7 @@ for prj in $projects; do
 
     cd ..
 done
+
+# Add symlink to appbat tests.
+(cd appbat && ln -sf ../../app-battery/tests tests)
+
