@@ -1,0 +1,105 @@
+#!/usr/bin/python
+
+# run-appbat-tests - script to run tests on the appbat
+
+# This script expects to be called from the build root, and takes
+# two command-line arguments: the directory containing the packages,
+# and the directory to place the results.
+
+import sys
+import os
+import subprocess
+
+# For appchk, which specific app do we wish to test?
+
+project_exe = { "alsaplayer": "bin/alsaplayer",
+                "apache": "sbin/httpd",
+                "rsync": "bin/rsync",
+                "samba": "sbin/smbd",
+                "tcl": "bin/tclsh8.5",
+                "expect": "bin/expect",
+                "python": "bin/python",
+                "groff": "bin/groff",
+                "lynx": "bin/lynx",
+                "xpdf": "bin/xpdf",
+                "ghostscript": "bin/gs",
+                "gnupg": "bin/gpg",
+                "openjade": "bin/openjade",
+                "perl": "bin/perl",
+                "raptor": "bin/rapper",
+                "pidgin": "bin/pidgin",
+                "leafpad": "bin/leafpad",
+                "celestia": "bin/celestia",
+                "xpaint": "bin/xpaint",
+                "scribus": "bin/scribus",
+                "designer": "bin/designer",
+                "transmission": "bin/transmission",
+                "xscreensaver": "bin/xscreensaver " }
+
+# What archs use "lib64" instead of "lib"?
+
+lib64_archs = ["ppc64", "s390x", "x86_64"]
+
+def run_appchk(resultdir):
+    # Get proper lib dir.
+
+    arch_process = subprocess.Popen("arch", stdout=subprocess.PIPE)
+    arch_process.wait()
+    arch_name = arch_process.stdout.read().strip()
+
+    if arch_name in lib64_archs:
+        libdir = "lib64"
+    else:
+        libdir = "lib"
+
+    # Run appchk.
+
+    for pkgrootdir in os.listdir("pkgroot"):
+        prjname = os.path.basename(pkgrootdir).replace("lsb-", "")
+        if prjname in project_exe:
+            appchk_out = open(
+                os.path.join(resultdir, "lsb-%s.output" % prjname), "w")
+            appchk_journalpath = \
+                os.path.join(resultdir, "journal.appchk.%s" % prjname)
+            appchk_exe = os.path.join("pkgroot", pkgrootdir, 
+                                      "opt", "lsb", "appbat", 
+                                      project_exe[prjname])
+            appchk_cmdline = \
+                "/opt/lsb/bin/lsbappchk -j -o %s -D pkgroot/%s/opt/lsb/appbat/%s %s" % \
+                (appchk_journalpath, pkgrootdir, libdir, appchk_exe)
+
+            appchk_process = subprocess.Popen(appchk_cmdline, shell=True, 
+                                              stdout=appchk_out, 
+                                              stderr=subprocess.STDOUT)
+            appchk_process.wait()
+            appchk_out.close()
+
+            if appchk_process.returncode != 0:
+                sys.stdout.write("appchk failed on %s\n" % prjname)
+            else:
+                tjreport_out = open(
+                    os.path.join(resultdir, "tjreport.%s.txt" % prjname), "w")
+                subprocess.call(
+                    "/opt/lsb-tet3-lite/bin/tjreport %s" % appchk_journalpath,
+                    stdout=tjreport_out, stderr=subprocess.STDOUT, shell=True)
+                tjreport_out.close()
+
+def run_pkgchk(pkgdir, resultdir):
+    for pkg in os.listdir(pkgdir):
+        if pkg[-4:] != ".rpm":
+            continue
+
+        pkgchk_journalpath = os.path.join(resultdir, 
+                                          "journal.pkgchk.%s.txt" % pkg)
+        pkgchk_cmdline = "/opt/lsb/bin/lsbpkgchk -r 4.0 -Llsb -j %s %s" % \
+            (pkgchk_journalpath, os.path.join(pkgdir, pkg))
+        subprocess.call(pkgchk_cmdline, shell=True)
+
+def main():
+    (pkgdir, resultdir) = sys.argv[1:]
+
+    run_appchk(resultdir)
+    run_pkgchk(pkgdir, resultdir)
+
+if __name__ == "__main__":
+    main()
