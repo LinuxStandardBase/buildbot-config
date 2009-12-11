@@ -97,6 +97,8 @@ def run_pkgchk(pkgdir, resultdir):
 
 def main():
     (pkgdir, resultdir) = sys.argv[1:]
+    if not os.path.exists(resultdir):
+        os.makedirs(resultdir)
 
     run_appchk(resultdir)
     run_pkgchk(pkgdir, resultdir)
