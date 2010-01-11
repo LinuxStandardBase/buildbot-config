@@ -26,9 +26,9 @@ rm -rf repogen
 
 cd $TOP_PATH/$SNAPSHOT_PATH
 rsync -a --delete * $UPLOAD_TARGET/$SNAPSHOT_PATH
-cd $TOP_PATH/repositories/yum/lsb-snapshot
-rsync -a --delete * $UPLOAD_TARGET/repositories/yum/lsb-snapshot
-cd $TOP_PATH/repositories/debian/pkgs-snapshot
-rsync -a --delete * $UPLOAD_TARGET/repositories/debian/pkgs-snapshot
-cd $TOP_PATH/repositories/debian/dists/lsb-snapshot
-rsync -a --delete * $UPLOAD_TARGET/repositories/debian/dists/lsb-snapshot
+cd $TOP_PATH/repositories/yum
+rsync -a --delete lsb-snapshot $UPLOAD_TARGET/repositories/yum
+cd $TOP_PATH/repositories/debian
+rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/repositories/debian
+cd dists
+rsync -a --delete lsb-snapshot $UPLOAD_TARGET/repositories/debian/dists
