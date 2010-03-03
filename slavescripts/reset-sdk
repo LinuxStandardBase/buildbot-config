@@ -3,11 +3,13 @@
 mkdir -p $HOME/tmp
 [ -e $HOME/lsb-released-sdk.tar.gz ]
 
-SDK_PKGS="lsb-build-base lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-qt4 lsb-makelsbpkg"
+# SDK packages besides lsb-build-base, which has to be handled specially.
+SDK_PKGS="lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-qt4 lsb-makelsbpkg"
 
 for pkg in $SDK_PKGS; do
   sudo rpm --nodeps --allmatches -e $pkg || true
 done
+sudo rpm --nodeps --allmatches -e lsb-build-base || true
 
 (cd $HOME/tmp && zcat $HOME/lsb-released-sdk.tar.gz | tar xf -)
 
@@ -16,6 +18,7 @@ if [ $? -ne 0 ]; then
   sudo rpm -Uvh --force $HOME/tmp/lsb-sdk/lsb-setup*rpm
 fi
 
+sudo rpm -Uvh --force $HOME/tmp/lsb-sdk/lsb-build-base*
 for pkg in $SDK_PKGS; do
   sudo rpm -Uvh --force $HOME/tmp/lsb-sdk/$pkg*
 done
