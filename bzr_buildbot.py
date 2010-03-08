@@ -99,6 +99,11 @@ blame_merge_author: normally, the user that commits the revision is the user
                     revision is responsible for the change. set this value to
                     True if this is pointed against a PQM-managed branch.
 
+rebuild_on_restart: since the poller does not save state when buildbot itself
+                    is restarted, decide whether to rebuild when the last
+                    revision information is missing, or just set it.  Defaults
+                    to False (don't flag changes for rebuild when restarting).
+
 -------------------
 Contact Information
 -------------------
@@ -209,7 +214,7 @@ if DEFINE_POLLER:
         compare_attrs = ['url']
 
         def __init__(self, url, poll_interval=10*60, blame_merge_author=False,
-                     branch_name=None):
+                     branch_name=None, rebuild_on_restart=False):
             # poll_interval is in seconds, so default poll_interval is 10
             # minutes.
             # bzr+ssh://bazaar.launchpad.net/~launchpad-pqm/launchpad/devel/
@@ -221,6 +226,7 @@ if DEFINE_POLLER:
             self.loop = twisted.internet.task.LoopingCall(self.poll)
             self.blame_merge_author = blame_merge_author
             self.branch_name = branch_name
+            self.rebuild_on_restart = rebuild_on_restart
             self.polling = False
 
         def startService(self):
@@ -281,6 +287,8 @@ if DEFINE_POLLER:
             changes = []
             change = generate_change(
                 branch, blame_merge_author=self.blame_merge_author)
+            if self.last_revision is None and not self.rebuild_on_restart:
+                self.last_revision = change['revision']
             if (self.last_revision is None or
                 change['revision'] > self.last_revision):
                 change['branch'] = branch_name
