@@ -38,8 +38,7 @@ class LSBBuildCommand(ShellCommand):
         ShellCommand.start(self)
 
 class LSBBuildPackage(LSBBuildCommand):
-    def __init__(self, **kwargs):
-        makeargs = False
+    def __init__(self, makeargs=False, **kwargs):
         if "command" not in kwargs:
             kwargs["command"] = "cd package && make BUILD_NO_DEB=1"
             makeargs = True
@@ -52,8 +51,7 @@ class LSBBuildPackage(LSBBuildCommand):
 # is set to "..".
 
 class LSBBuildFromPackaging(LSBBuildCommand):
-    def __init__(self, **kwargs):
-        makeargs = False
+    def __init__(self, makeargs=False, **kwargs):
         if "subdir" in kwargs:
             kwargs["command"] = "cd ../packaging/%s && make rpm_package" % kwargs["subdir"]
             del kwargs["subdir"]
