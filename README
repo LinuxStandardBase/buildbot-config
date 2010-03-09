@@ -1,14 +1,28 @@
-LSB configuration for buildbot
-------------------------------
+LINUX FOUNDATION BUILDBOT CONFIG
+================================
+
+This information should help people understand and work with the Linux
+Foundation's buildbot setup.
+
+Contents
+--------
 
 The current buildbot settings and scripts are stored here.  There are
-currently two types of files here:
+currently four types of files here:
 
  - lsb_master.cfg and moblin_master.cfg, the master configuration for
    buildbot
 
+ - support Python modules for the above
+
+ - master-side support scripts, that do things like assemble the
+   snapshots directory and build repositories
+
  - the files in slavescripts, which are expected to be copied to every
    build slave somewhere in the PATH
+
+Setup
+-----
 
 The setup procedure for completely rebuilding the buildbot config is
 as follows:
@@ -17,45 +31,82 @@ as follows:
 the directions in the documentation.  One will be for LSB; the other
 will be for Moblin.
 
-2.  Copy or symlink each foo_master.cfg from this project as
-master.cfg in each new master.
+2.  Symlink each foo_master.cfg from this project as master.cfg in
+each new master.
 
-3.  Install the tools needed for building all projects in the SDK on
+3.  Symlink each .py file to each master directory as well.
+
+4.  Start each master.
+
+5.  Set up the slaves, as described below.
+
+Slave setup
+-----------
+
+While the masters are expected to be more-or-less permanent, the
+slaves are completely replaceable.  Here's the procedure for setting
+up a new slave:
+
+1.  Install the tools needed for building all projects in the SDK on
 the slaves.  At minimum, that will include bzr and the base
 development tools.
 
-4.  Create a "buildbot" user.  Make sure the account is locked however
+2.  Create a "buildbot" user.  Make sure the account is locked however
 that works for the distribution being used.
 
-5.  Install buildbot on each slave.  This will likely require
+3.  Install buildbot on each slave.  This will likely require
 installing Twisted.  Be sure to install the core, Mail, Web, and
 Words.
 
-6.  Create a slave instance according to the buildbot documentation as
+4.  Create a slave instance according to the buildbot documentation as
 the buildbot user.  Be sure and pass the argument "--umask=022" to the
 create-slave command, so the permissions on the resulting packages
 aren't too restrictive.
 
-7.  Give password-less access via sudo to the rpm command for the
+5.  Give password-less access via sudo to the rpm command for the
 buildbot user.  The builds will require the buildbot to install and
 remove packages.  Something like this should do:
 
 buildbot ALL=NOPASSWD: /bin/rpm
 
-8.  Copy the scripts in this project's "slavescripts" directory into
+6.  Copy the scripts in this project's "slavescripts" directory into
 the path.
 
-9.  Download a copy of the current released LSB SDK bundle tarball to
+7.  Download a copy of the current released LSB SDK bundle tarball to
 the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz (for the
 buildbot user).
 
-10. Add the command to start the slave on reboot.  If you installed
+8.  Add the command to start the slave on reboot.  If you installed
 buildbot on the slave via a distro package, this may be set up
 already; see your distro's buildbot docs.  If not, a line like this in
 buildbot's crontab should do the trick:
 
 @reboot buildbot start /path/to/slave
 
-At that point, you should be able to start both the masters and the
-slaves.  Force each job, or let them run as scheduled, to make sure
-you didn't miss anything.
+At that point, you should be able to start the slave.  Force each job
+scheduled to be run on that slave, or let them run as scheduled, to
+make sure you didn't miss anything.
+
+Using the configuration
+-----------------------
+
+Both masters include an IRC bot and a Web status page that can be used
+to trigger builds.  See the buildbot documentation for details.
+
+On the LSB side, there is a separate build for each architecture; they
+are named for their version control repository and architecture,
+separated by a dash.  So, for example, the ia64 build of our Python
+tests is called "python-test-ia64".  For stuff built out of
+"packaging", the subdir name from "packaging" is used.  The SDK is
+built as a single build, called "build-sdk" (plus the arch), and the
+appbat is split into two builds, called "libbat" and "appbat".
+
+The LSB side is also special because we have a distinction between
+"production" and "development" builds, which affect things like
+package version numbers.  By default, all builds are "development".
+To cause a "production" build, manually trigger a build with both the
+branch and the revision set.  For example, to trigger a production
+build of the tip of "desktop-test" on x86_64, you'd manually build
+"desktop-test-x86_64", with revision "-1" and branch
+"lsb/devel/desktop-test".  Any bzr revision spec can be used for the
+revision.

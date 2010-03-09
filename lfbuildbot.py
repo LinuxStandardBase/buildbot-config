@@ -17,23 +17,33 @@ class PropMasterShellCommand(MasterShellCommand):
         MasterShellCommand.start(self)
 
 class LSBBuildCommand(ShellCommand):
-    def setupEnvironment(self, cmd):
-        if self.build.source.changes is None:
-            if self.build.source.revision is None:
-                buildrev = "-1"
-            else:
-                buildrev = self.build.source.revision
-            if cmd.args['env'] is None:
-                cmd.args
-            self.build.slaveEnvironment['OFFICIAL_RELEASE'] = buildrev
+    def __init__(self, makeargs=False, **kwargs):
+        self.do_make_args = makeargs
+        ShellCommand.__init__(self, **kwargs)
+        self.addFactoryArguments(makeargs=makeargs)
 
-        ShellCommand.setupEnvironment(self, cmd)
+    def _get_make_args(self):
+        "Get any special make arguments needed."
+
+        args = []
+        if self.getProperty("revision") is not None and \
+           self.getProperty("branch") is not None:
+            args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
+        return args
+
+    def start(self):
+        if self.do_make_args:
+            self.setCommand(self.command + " " + " ".join(self._get_make_args()))
+
+        ShellCommand.start(self)
 
 class LSBBuildPackage(LSBBuildCommand):
     def __init__(self, **kwargs):
+        makeargs = False
         if "command" not in kwargs:
             kwargs["command"] = "cd package && make BUILD_NO_DEB=1"
-        ShellCommand.__init__(self, **kwargs)
+            makeargs = True
+        LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
 
 # Automate some of the packaging build.  When using this, be sure to check
 # out a copy of "packaging" (via ShellCommand, as buildbot's source stuff
@@ -43,7 +53,9 @@ class LSBBuildPackage(LSBBuildCommand):
 
 class LSBBuildFromPackaging(LSBBuildCommand):
     def __init__(self, **kwargs):
+        makeargs = False
         if "subdir" in kwargs:
             kwargs["command"] = "cd ../packaging/%s && make rpm_package" % kwargs["subdir"]
             del kwargs["subdir"]
-        ShellCommand.__init__(self, **kwargs)
+            makeargs = True
+        LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
