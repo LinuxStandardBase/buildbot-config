@@ -9,6 +9,7 @@ SDK_PKGS="lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-q
 for pkg in $SDK_PKGS; do
   sudo rpm --nodeps --allmatches -e $pkg || true
 done
+sudo rpm --nodeps --allmatches -e lsb-build-libbat || true
 sudo rpm --nodeps --allmatches -e lsb-build-base || true
 
 (cd $HOME/tmp && zcat $HOME/lsb-released-sdk.tar.gz | tar xf -)
