@@ -104,9 +104,5 @@ appbat is split into two builds, called "libbat" and "appbat".
 The LSB side is also special because we have a distinction between
 "production" and "development" builds, which affect things like
 package version numbers.  By default, all builds are "development".
-To cause a "production" build, manually trigger a build with both the
-branch and the revision set.  For example, to trigger a production
-build of the tip of "desktop-test" on x86_64, you'd manually build
-"desktop-test-x86_64", with revision "-1" and branch
-"lsb/devel/desktop-test".  Any bzr revision spec can be used for the
-revision.
+To cause a "production" build, manually trigger a build, and include
+the string "production:" in the reason for the build.

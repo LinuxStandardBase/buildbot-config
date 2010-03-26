@@ -26,8 +26,7 @@ class LSBBuildCommand(ShellCommand):
         "Get any special make arguments needed."
 
         args = []
-        if self.getProperty("revision") is not None and \
-           self.getProperty("branch") is not None:
+        if "production:" in self.build.reason:
             args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
         return args
 
