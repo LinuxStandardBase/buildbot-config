@@ -20,7 +20,7 @@ for f in $master_path/lsb-sdk-results-*tar.gz; do
     tar xzf $f
     for prj in $sdk_projects; do
 	ls sdk-results/$prj/*.rpm | egrep -v src.rpm | \
-	    (while read ff; do mv $ff ../$prj; done)
+	    (while read ff; do chmod 644 $ff; mv $ff ../$prj; done)
     done
     rm -rf results
 done
@@ -29,6 +29,7 @@ if [ -f $master_path/lsb-sdk-results-x86_64.tar.gz ]; then
     tar xzf $master_path/lsb-sdk-results-x86_64.tar.gz
     for prj in $sdk_projects; do
 	mv sdk-results/$prj/*src.rpm ../$prj
+	chmod 644 ../$prj/*src.rpm
     done
 fi
 
