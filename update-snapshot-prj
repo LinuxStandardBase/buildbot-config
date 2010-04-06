@@ -21,8 +21,10 @@ for prj in $projects; do
 
     if [ -f $master_path/$prj-results-x86_64.tar.gz ]; then
         tar xzf $master_path/$prj-results-x86_64.tar.gz
-        mv results/*src.rpm . 2>/dev/null || true
-	chmod 644 *src.rpm
+	if [ -f results/*src.rpm ]; then
+            mv results/*src.rpm .
+	    chmod 644 *src.rpm
+	fi
         rm -rf results
     fi
 
