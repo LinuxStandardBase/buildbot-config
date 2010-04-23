@@ -30,7 +30,23 @@ class LSBBuildCommand(ShellCommand):
             args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
         return args
 
+    def _set_branch_name(self):
+        "Set the branch_name property to a safe branch name."
+
+        branch = self.getProperty("branch")
+        if branch is None:
+            branch_name = "devel"
+        elif branch[:4] == "lsb/":
+            branch_name = branch[4:]
+            branch_name = branch_name[:branch_name.index("/")]
+        else:
+            branch_name = branch.replace("/", "-")
+
+        self.setProperty("branch_name", branch_name)
+
     def start(self):
+        self._set_branch_name()
+
         if self.do_make_args:
             self.setCommand(self.command + " " + " ".join(self._get_make_args()))
 
