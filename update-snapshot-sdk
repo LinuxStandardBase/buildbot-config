@@ -16,7 +16,7 @@ rm -rf junk
 mkdir junk
 cd junk
 
-for f in $master_path/lsb-sdk-results-*tar.gz; do
+for f in $master_path/lsb-sdk-devel-*tar.gz; do
     tar xzf $f
     for prj in $sdk_projects; do
 	ls sdk-results/$prj/*.rpm | egrep -v src.rpm | \
@@ -25,8 +25,8 @@ for f in $master_path/lsb-sdk-results-*tar.gz; do
     rm -rf results
 done
 
-if [ -f $master_path/lsb-sdk-results-x86_64.tar.gz ]; then
-    tar xzf $master_path/lsb-sdk-results-x86_64.tar.gz
+if [ -f $master_path/lsb-sdk-devel-x86_64.tar.gz ]; then
+    tar xzf $master_path/lsb-sdk-devel-x86_64.tar.gz
     for prj in $sdk_projects; do
 	mv sdk-results/$prj/*src.rpm ../$prj
 	chmod 644 ../$prj/*src.rpm

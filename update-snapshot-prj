@@ -3,7 +3,7 @@
 master_path=/data/buildbot/master_lsb
 snapshot_path=/data/buildbot/lsb-snapshots/snapshots
 
-projects="app-checker azov-qt3-tests azov-qt4-tests azov-xml2-tests desktop-test distribution-checker dtk-manager libstdcpp-test lsb-sigchk lsb-setup lsb-xvfb lsbappchk-perl lsbappchk-python lsbappchk-sh lsbappchk lsbsi-tools makelsbpkg olver-core-tests perl-test printing-test python-test qmtest-harness runtime-test t2c-cpp-tests t2c-desktop-tests t2c-runtime-tests task-pkgs tet-harness xts5-test lsbarchk lsbcmdchk lsbdev-runner lsblibchk lsbpkgchk lsb-xdg-utils libbat appbat"
+projects="app-checker azov-qt3-tests azov-qt4-tests azov-xml2-tests desktop-test distribution-checker dtk-manager libstdcpp-test lsb-sigchk lsb-setup lsb-xvfb lsbappchk-perl lsbappchk-python lsbappchk-sh lsbappchk lsbsi-tools makelsbpkg olver-core-tests perl-test printing-test python-test qmtest-harness runtime-test t2c-alsa-tests t2c-cpp-tests t2c-desktop-tests t2c-runtime-tests task-pkgs tet-harness xts5-test lsbarchk lsbcmdchk lsbdev-runner lsblibchk lsbpkgchk lsb-xdg-utils libbat appbat"
 
 cd $snapshot_path
 
@@ -13,14 +13,14 @@ for prj in $projects; do
     mkdir $prj
     cd $prj
 
-    for f in $master_path/$prj-results-*tar.gz; do
+    for f in $master_path/$prj-devel-*tar.gz; do
 	tar xzf $f
 	ls results/*.rpm 2>/dev/null | egrep -v src.rpm | (while read ff; do chmod 644 $ff; mv $ff .; done) || true
 	rm -rf results
     done
 
-    if [ -f $master_path/$prj-results-x86_64.tar.gz ]; then
-        tar xzf $master_path/$prj-results-x86_64.tar.gz
+    if [ -f $master_path/$prj-devel-x86_64.tar.gz ]; then
+        tar xzf $master_path/$prj-devel-x86_64.tar.gz
 	if [ -f results/*src.rpm ]; then
             mv results/*src.rpm .
 	    chmod 644 *src.rpm
