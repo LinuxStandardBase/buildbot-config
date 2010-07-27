@@ -7,8 +7,26 @@
 # the date-based versions when they haven't.  Also, for those projects
 # built out of packaging, handle them too.
 
+import re
+
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
+
+# Helper function.  This takes a branch as passed into buildbot, and
+# pulls out just the LSB version part.  If it can't figure out the
+# LSB version, it creates a normalized branch name based off the
+# branch path.
+
+def extract_branch_name(branch):
+    if branch is None:
+        branch_name = "devel"
+    elif branch[:4] == "lsb/":
+        branch_name = branch[4:]
+        branch_name = branch_name[:branch_name.index("/")]
+    else:
+        branch_name = branch.replace("/", "-")
+
+    return branch_name
 
 class PropMasterShellCommand(MasterShellCommand):
     def start(self):
@@ -26,23 +44,22 @@ class LSBBuildCommand(ShellCommand):
         "Get any special make arguments needed."
 
         args = []
-        if "production:" in self.build.reason:
+
+        branch_name = self.getProperty("branch_name")
+        found_lsb_version = re.match(r'^\d+\.\d+$', branch_name)
+        if found_lsb_version:
+            args.append("LSBCC_LSBVERSION=%s" % branch_name)
+
+        if "production:" in self.build.reason or found_lsb_version:
             args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
+
         return args
 
     def _set_branch_name(self):
         "Set the branch_name property to a safe branch name."
 
-        branch = self.getProperty("branch")
-        if branch is None:
-            branch_name = "devel"
-        elif branch[:4] == "lsb/":
-            branch_name = branch[4:]
-            branch_name = branch_name[:branch_name.index("/")]
-        else:
-            branch_name = branch.replace("/", "-")
-
-        self.setProperty("branch_name", branch_name)
+        self.setProperty("branch_name", 
+                         extract_branch_name(self.getProperty("branch")))
 
     def start(self):
         self._set_branch_name()
@@ -72,3 +89,29 @@ class LSBBuildFromPackaging(LSBBuildCommand):
             del kwargs["subdir"]
             makeargs = True
         LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
+
+class LSBReloadSDK(ShellCommand):
+    command = ["placeholder"]
+
+    def _set_branch_name(self):
+        "Set the branch_name property to a safe branch name."
+
+        self.setProperty("branch_name", 
+                         extract_branch_name(self.getProperty("branch")))
+
+    def _is_devel(self):
+        "Figure out whether we're being called on a devel tree."
+
+        return self.getProperty("branch_name") == "devel"
+
+    def start(self):
+        m = re.search(r'-([^\-]+)$', self.getProperty("buildername"))
+        arch = m.group(1)
+
+        self._set_branch_name()
+        if self._is_devel():
+            self.setCommand(['update-sdk',
+                             '../../build-sdk-%s/sdk-results' % arch])
+        else:
+            self.setCommand(['reset-sdk'])
+        ShellCommand.start(self)
