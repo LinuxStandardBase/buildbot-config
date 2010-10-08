@@ -11,6 +11,8 @@ import re
 
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
+from buildbot.scheduler import Triggerable
+from buildbot.sourcestamp import SourceStamp
 
 # Helper function.  This takes a branch as passed into buildbot, and
 # pulls out just the LSB version part.  If it can't figure out the
@@ -27,6 +29,23 @@ def extract_branch_name(branch):
         branch_name = branch.replace("/", "-")
 
     return branch_name
+
+# Special Triggerable scheduler which can ignore the trigger's SourceStamp
+# entirely.  This allows a build to trigger another build that doesn't use
+# the same version control repository.
+
+class IndepTriggerable(Triggerable):
+    def __init__(self, name, builderNames, useSourceStamp=False):
+        Triggerable.__init__(self, name, builderNames)
+        self.useSourceStamp = useSourceStamp
+
+    def trigger(self, ss, set_props=None):
+        if not self.useSourceStamp:
+            return Triggerable.trigger(self, 
+                                       SourceStamp(None, None, None, None), 
+                                       set_props)
+        else:
+            return Triggerable.trigger(self, ss, set_props)
 
 class PropMasterShellCommand(MasterShellCommand):
     def start(self):
