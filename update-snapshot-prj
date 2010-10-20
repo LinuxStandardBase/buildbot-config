@@ -34,3 +34,15 @@ done
 # Add symlink to appbat tests.
 (cd appbat && ln -sf ../../app-battery/tests tests)
 
+# Unpack devchk info.
+rm -rf devchk
+mkdir devchk
+cd devchk
+
+for devchktar in $master_path/devchk-*.tar.gz; do
+    pathname=$(basename $devchktar | sed s/devchk-// | sed s/.tar.gz//)
+    zcat $devchktar | tar xf -
+    mv results $pathname
+done
+
+cd ..
