@@ -1,7 +1,13 @@
 #!/bin/sh -e
 
+if [ "$1" -eq "--beta" ]; then
+    SDK_TARBALL=lsb-beta-sdk.tar.gz
+else
+    SDK_TARBALL=lsb-released-sdk.tar.gz
+fi
+
 mkdir -p $HOME/tmp
-[ -e $HOME/lsb-released-sdk.tar.gz ]
+[ -e $HOME/$SDK_TARBALL ]
 
 # SDK packages besides lsb-build-base, which has to be handled specially.
 SDK_PKGS="lsb-build-cc lsb-build-c++ lsb-build-desktop lsb-build-qt3 lsb-build-qt4 lsb-makelsbpkg"
@@ -12,7 +18,7 @@ done
 sudo rpm --nodeps --allmatches -e lsb-build-libbat || true
 sudo rpm --nodeps --allmatches -e lsb-build-base || true
 
-(cd $HOME/tmp && zcat $HOME/lsb-released-sdk.tar.gz | tar xf -)
+(cd $HOME/tmp && zcat $HOME/$SDK_TARBALL | tar xf -)
 
 rpm -q lsb-setup > /dev/null 2>&1
 if [ $? -ne 0 ]; then

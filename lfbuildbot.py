@@ -127,12 +127,19 @@ class LSBReloadSDK(ShellCommand):
 
         return self.getProperty("branch_name") == "devel"
 
+    def _is_beta(self):
+        "Figure out whether we're being called for a beta build."
+
+        return "beta:" in self.build.reason
+
     def start(self):
         m = re.search(r'-([^\-]+)$', self.getProperty("buildername"))
         arch = m.group(1)
 
         self._set_branch_name()
-        if self._is_devel():
+        if self._is_beta():
+            self.setCommand(['reset-sdk', '--beta'])
+        elif self._is_devel():
             self.setCommand(['update-sdk',
                              '../../build-sdk-%s/sdk-results' % arch])
         else:
