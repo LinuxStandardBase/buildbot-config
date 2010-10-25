@@ -69,8 +69,12 @@ class LSBBuildCommand(ShellCommand):
         if found_lsb_version:
             args.append("LSBCC_LSBVERSION=%s" % branch_name)
 
-        if "production:" in self.build.reason or found_lsb_version:
+        if "production:" in self.build.reason or \
+           "beta:" in self.build.reason or found_lsb_version:
             args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
+
+        if "beta:" in self.build.reason:
+            args.append("SKIP_DEVEL_VERSIONS=no")
 
         return args
 
