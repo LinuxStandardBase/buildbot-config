@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-if [ "$1" -eq "--beta" ]; then
+if [ "$1" = "--beta" ]; then
     SDK_TARBALL=lsb-beta-sdk.tar.gz
 else
     SDK_TARBALL=lsb-released-sdk.tar.gz
