@@ -9,10 +9,18 @@
 
 import re
 
+from twisted.python import log
+from twisted.application import internet
+
+from buildbot import buildset
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
-from buildbot.scheduler import Triggerable
+from buildbot.scheduler import BaseUpstreamScheduler, Triggerable
 from buildbot.sourcestamp import SourceStamp
+
+# List of supported architectures.  Used for MultiScheduler.
+
+lsb_archs = ["x86_64", "x86", "ia64", "ppc32", "ppc64", "s390", "s390x"]
 
 # Helper function.  This takes a branch as passed into buildbot, and
 # pulls out just the LSB version part.  If it can't figure out the
@@ -47,6 +55,102 @@ class IndepTriggerable(Triggerable):
         else:
             return Triggerable.trigger(self, ss, set_props)
 
+# Job file parser for MultiScheduler.  It turns a job file into a number
+# of BuildRequest objects.
+
+class JobParseError(Exception):
+    pass
+
+class MultiJobFile:
+    def __init__(self, path, properties={}):
+        self.tag = None
+        self.projects = []
+        self.branch_name = None
+        self.build_type = "normal"
+        self.properties = properties
+        self.path = path
+
+        try:
+            self.f = open(self.path)
+        except:
+            raise JobParseError("could not open job file " + self.path)
+
+        try:
+            self.parse()
+        finally:
+            self.f.close()
+
+        self.properties["build_type"] = self.build_type
+
+        if not self.branch_name or not self.projects:
+            raise JobParseError("missing information in job file")
+        if self.build_type not in ("normal", "production", "beta"):
+            raise JobParseError("invalid build type: " + self.build_type)
+
+    def __iter__(self):
+        if self.tag:
+            revision = "tag:" + self.tag
+        else:
+            revision = None
+
+        for prj in self.projects:
+            for arch in lsb_archs:
+                builderNames = ["%s-%s" % (prj, arch)]
+                branch = "lsb/%s/%s" % (self.branch_name, prj)
+                ss = SourceStamp(branch, revision, None, None)
+                yield buildset.BuildSet(builderNames, ss, 
+                                        reason="MultiScheduler job",
+                                        properties=self.properties)
+
+    def parse(self):
+        for line in self.f:
+            (name, value) = [x.strip() for x in line.strip().split("=")]
+            if name == "branch_name":
+                self.branch_name = value
+            elif name == "tag":
+                self.tag = value
+            elif name == "projects":
+                for prj in value.split(","):
+                    self.projects.append(prj.strip())
+            elif name == "build_type":
+                self.build_type = value
+            else:
+                raise JobParseError("invalid key: " + name)
+
+# Scheduler which can start a number of builds at once.  These are
+# grouped by project; they are started across all supported architectures.
+
+class MultiScheduler(BaseUpstreamScheduler):
+    compare_attrs = ('name', 'jobdir', 'properties')
+
+    def __init__(self, name, builderNames, jobdir, properties={}):
+        BaseUpstreamScheduler.__init__(self, name, properties)
+        self.builderNames = builderNames
+        self.jobdir = jobdir
+        self.properties = properties
+        self.poller = internet.TimerService(10, self.poll)
+        self.poller.setServiceParent(self)
+
+    def listBuilderNames(self):
+        return self.builderNames
+
+    def getPendingBuildTimes(self):
+        return []
+
+    def poll(self):
+        for f in os.listdir(self.jobdir):
+            f_full = os.path.join(self.jobdir, f)
+            try:
+                try:
+                    jobfile = MultiJobFile(f_full, self.properties)
+                    for bs in jobfile:
+                        self.submitBuildSet(bs)
+                finally:
+                    os.unlink(f_full)
+            except JobParseError, e:
+                log.msg("bad job file %s: %s" % (f, str(e)))
+                continue
+
 class PropMasterShellCommand(MasterShellCommand):
     def start(self):
         properties = self.build.getProperties()
@@ -69,11 +173,11 @@ class LSBBuildCommand(ShellCommand):
         if found_lsb_version:
             args.append("LSBCC_LSBVERSION=%s" % branch_name)
 
-        if "production:" in self.build.reason or \
-           "beta:" in self.build.reason or found_lsb_version:
+        if self.getProperty("build_type") in ("beta", "production") \
+                or found_lsb_version:
             args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
 
-        if "beta:" in self.build.reason:
+        if self.getProperty("build_type") == "beta":
             args.append("SKIP_DEVEL_VERSIONS=no")
 
         return args
@@ -84,17 +188,27 @@ class LSBBuildCommand(ShellCommand):
         self.setProperty("branch_name", 
                          extract_branch_name(self.getProperty("branch")))
 
-    def _set_reason(self):
-        "Propagate the build reason into the build's properties if needed."
+    def _calc_build_type(self):
+        "Figure out whether we're being called for a beta build."
+
+        if "beta:" in self.build.reason:
+            return "beta"
+        elif "production:" in self.build.reason:
+            return "production"
+        else:
+            return "normal"
+
+    def _set_build_type(self):
+        "Propagate the build type into the build's properties if needed."
 
         try:
-            self.getProperty("reason")
+            self.getProperty("build_type")
         except KeyError:
-            self.setProperty("reason", self.build.reason)
+            self.setProperty("build_type", self._calc_build_type())
 
     def start(self):
         self._set_branch_name()
-        self._set_reason()
+        self._set_build_type()
 
         if self.do_make_args:
             self.setCommand(self.command + " " + " ".join(self._get_make_args()))
@@ -122,6 +236,9 @@ class LSBBuildFromPackaging(LSBBuildCommand):
             makeargs = True
         LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
 
+# Reload the SDK.  This class figures out what SDK we need (devel, stable,
+# or beta) and installs it.
+
 class LSBReloadSDK(LSBBuildCommand):
     command = ["placeholder"]
 
@@ -133,15 +250,14 @@ class LSBReloadSDK(LSBBuildCommand):
     def _is_beta(self):
         "Figure out whether we're being called for a beta build."
 
-        return "beta:" in self.build.reason or \
-               "beta:" in self.getProperty("reason")
+        return self.getProperty("build_type") == "beta"
 
     def start(self):
         m = re.search(r'-([^\-]+)$', self.getProperty("buildername"))
         arch = m.group(1)
 
         self._set_branch_name()
-        self._set_reason()
+        self._set_build_type()
         if self._is_beta():
             self.setCommand(['reset-sdk', '--beta'])
         elif self._is_devel():
