@@ -7,12 +7,15 @@
 # the date-based versions when they haven't.  Also, for those projects
 # built out of packaging, handle them too.
 
+import os
 import re
 
 from twisted.python import log
 from twisted.application import internet
+from twisted.internet import reactor
 
 from buildbot import buildset
+from buildbot.process import properties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
 from buildbot.scheduler import BaseUpstreamScheduler, Triggerable
@@ -62,12 +65,12 @@ class JobParseError(Exception):
     pass
 
 class MultiJobFile:
-    def __init__(self, path, properties={}):
+    def __init__(self, path, prop):
         self.tag = None
         self.projects = []
         self.branch_name = None
         self.build_type = "normal"
-        self.properties = properties
+        self.properties = prop
         self.path = path
 
         try:
@@ -80,7 +83,7 @@ class MultiJobFile:
         finally:
             self.f.close()
 
-        self.properties["build_type"] = self.build_type
+        self.properties.setProperty("build_type", self.build_type, "Scheduler")
 
         if not self.branch_name or not self.projects:
             raise JobParseError("missing information in job file")
@@ -91,7 +94,7 @@ class MultiJobFile:
         if self.tag:
             revision = "tag:" + self.tag
         else:
-            revision = None
+            revision = "-1"
 
         for prj in self.projects:
             for arch in lsb_archs:
@@ -121,21 +124,28 @@ class MultiJobFile:
 # grouped by project; they are started across all supported architectures.
 
 class MultiScheduler(BaseUpstreamScheduler):
-    compare_attrs = ('name', 'jobdir', 'properties')
+    compare_attrs = ('name', 'builderNames', 'jobdir', 'properties')
 
-    def __init__(self, name, builderNames, jobdir, properties={}):
-        BaseUpstreamScheduler.__init__(self, name, properties)
+    def __init__(self, name, builderNames, jobdir, prop_dict={}):
+        BaseUpstreamScheduler.__init__(self, name, prop_dict)
         self.builderNames = builderNames
         self.jobdir = jobdir
-        self.properties = properties
-        self.poller = internet.TimerService(10, self.poll)
-        self.poller.setServiceParent(self)
+        self.poller = None
 
     def listBuilderNames(self):
         return self.builderNames
 
     def getPendingBuildTimes(self):
         return []
+
+    def startService(self):
+        BaseUpstreamScheduler.startService(self)
+        self.poller = reactor.callLater(10, self.poll)
+
+    def stopService(self):
+        BaseUpstreamScheduler.stopService(self)
+        self.poller.cancel()
+        self.poller = None
 
     def poll(self):
         for f in os.listdir(self.jobdir):
@@ -151,10 +161,12 @@ class MultiScheduler(BaseUpstreamScheduler):
                 log.msg("bad job file %s: %s" % (f, str(e)))
                 continue
 
+        self.poller = reactor.callLater(10, self.poll)
+
 class PropMasterShellCommand(MasterShellCommand):
     def start(self):
-        properties = self.build.getProperties()
-        self.command = properties.render(self.command)
+        prop = self.build.getProperties()
+        self.command = prop.render(self.command)
         MasterShellCommand.start(self)
 
 class LSBBuildCommand(ShellCommand):
