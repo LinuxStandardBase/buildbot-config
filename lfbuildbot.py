@@ -21,10 +21,6 @@ from buildbot.steps.master import MasterShellCommand
 from buildbot.scheduler import BaseUpstreamScheduler, Triggerable
 from buildbot.sourcestamp import SourceStamp
 
-# List of supported architectures.  Used for MultiScheduler.
-
-lsb_archs = ["x86_64", "x86", "ia64", "ppc32", "ppc64", "s390", "s390x"]
-
 # Helper function.  This takes a branch as passed into buildbot, and
 # pulls out just the LSB version part.  If it can't figure out the
 # LSB version, it creates a normalized branch name based off the
@@ -65,13 +61,17 @@ class JobParseError(Exception):
     pass
 
 class MultiJobFile:
-    def __init__(self, path, prop):
+    def __init__(self, path, repos, archs, indep_prj, indep_arch, prop):
         self.tag = None
         self.projects = []
         self.branch_name = None
         self.build_type = "normal"
         self.properties = prop
         self.path = path
+        self.repos = repos
+        self.archs = archs
+        self.indep_prj = indep_prj
+        self.indep_arch = indep_arch
 
         try:
             self.f = open(self.path)
@@ -97,9 +97,19 @@ class MultiJobFile:
             revision = "-1"
 
         for prj in self.projects:
-            for arch in lsb_archs:
+            if prj in self.repos and self.repos[prj]:
+                repo = self.repos[prj]
+            else:
+                repo = prj
+
+            if prj in self.indep_prj:
+                archs = [self.indep_arch]
+            else:
+                archs = self.archs
+
+            for arch in archs:
                 builderNames = ["%s-%s" % (prj, arch)]
-                branch = "lsb/%s/%s" % (self.branch_name, prj)
+                branch = "lsb/%s/%s" % (self.branch_name, repo)
                 ss = SourceStamp(branch, revision, None, None)
                 yield buildset.BuildSet(builderNames, ss, 
                                         reason="MultiScheduler job",
@@ -124,12 +134,18 @@ class MultiJobFile:
 # grouped by project; they are started across all supported architectures.
 
 class MultiScheduler(BaseUpstreamScheduler):
-    compare_attrs = ('name', 'builderNames', 'jobdir', 'properties')
+    compare_attrs = ('name', 'builderNames', 'jobdir', 'repos', 'archs', 
+                     'indep_prj', 'properties')
 
-    def __init__(self, name, builderNames, jobdir, prop_dict={}):
+    def __init__(self, name, builderNames, jobdir, repos, archs, indep_prj, 
+                 indep_arch, prop_dict={}):
         BaseUpstreamScheduler.__init__(self, name, prop_dict)
         self.builderNames = builderNames
         self.jobdir = jobdir
+        self.repos = repos
+        self.archs = archs
+        self.indep_prj = indep_prj
+        self.indep_arch = indep_arch
         self.poller = None
 
     def listBuilderNames(self):
@@ -152,7 +168,9 @@ class MultiScheduler(BaseUpstreamScheduler):
             f_full = os.path.join(self.jobdir, f)
             try:
                 try:
-                    jobfile = MultiJobFile(f_full, self.properties)
+                    jobfile = MultiJobFile(f_full, self.repos, self.archs,
+                                           self.indep_prj, self.indep_arch, 
+                                           self.properties)
                     for bs in jobfile:
                         self.submitBuildSet(bs)
                 finally:
