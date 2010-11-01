@@ -212,12 +212,6 @@ class LSBBuildCommand(ShellCommand):
 
         return args
 
-    def _set_branch_name(self):
-        "Set the branch_name property to a safe branch name."
-
-        self.setProperty("branch_name", 
-                         extract_branch_name(self.getProperty("branch")))
-
     def _calc_build_type(self):
         "Figure out whether we're being called for a beta build."
 
@@ -228,8 +222,14 @@ class LSBBuildCommand(ShellCommand):
         else:
             return "normal"
 
-    def _set_build_type(self):
-        "Propagate the build type into the build's properties if needed."
+    def _set_build_props(self):
+        "Set build-time properties."
+
+        try:
+            self.getProperty("branch_name")
+        except KeyError:
+            self.setProperty("branch_name", 
+                             extract_branch_name(self.getProperty("branch")))
 
         try:
             self.getProperty("build_type")
@@ -237,8 +237,7 @@ class LSBBuildCommand(ShellCommand):
             self.setProperty("build_type", self._calc_build_type())
 
     def start(self):
-        self._set_branch_name()
-        self._set_build_type()
+        self._set_build_props()
 
         if self.do_make_args:
             self.setCommand(self.command + " " + " ".join(self._get_make_args()))
@@ -283,11 +282,11 @@ class LSBReloadSDK(LSBBuildCommand):
         return self.getProperty("build_type") == "beta"
 
     def start(self):
+        self._set_build_props()
+
         m = re.search(r'-([^\-]+)$', self.getProperty("buildername"))
         arch = m.group(1)
 
-        self._set_branch_name()
-        self._set_build_type()
         if self._is_beta():
             self.setCommand(['reset-sdk', '--beta'])
         elif self._is_devel():
@@ -295,4 +294,4 @@ class LSBReloadSDK(LSBBuildCommand):
                              '../../build-sdk-%s/sdk-results' % arch])
         else:
             self.setCommand(['reset-sdk'])
-        ShellCommand.start(self)
+        LSBBuildCommand.start(self)
