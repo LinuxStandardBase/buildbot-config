@@ -84,6 +84,8 @@ class MultiJobFile:
             self.f.close()
 
         self.properties.setProperty("build_type", self.build_type, "Scheduler")
+        if self.build_type == "beta":
+            self.properties.setProperty("result_tag", "-beta", "Scheduler")
 
         if not self.branch_name or not self.projects:
             raise JobParseError("missing information in job file")
