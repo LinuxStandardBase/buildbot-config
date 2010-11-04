@@ -27,7 +27,7 @@ done
 sudo rpm --nodeps --allmatches -e lsb-build-libbat || true
 sudo rpm --nodeps --allmatches -e lsb-build-base || true
 
-(cd $HOME/tmp && zcat $HOME/$SDK_TARBALL | tar xf -)
+(cd $HOME/tmp && zcat $HOME/lsb-$SDK_TYPE-sdk.tar.gz | tar xf -)
 
 rpm -q lsb-setup > /dev/null 2>&1
 if [ $? -ne 0 ]; then
