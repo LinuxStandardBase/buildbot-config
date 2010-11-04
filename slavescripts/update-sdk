@@ -1,6 +1,17 @@
 #!/bin/sh -e
 
+if [ -e /tmp/last_installed_sdk ]; then
+    if [ $(cat /tmp/last_installed_sdk) = "devel" ]; then
+	echo "devel SDK already installed"
+	exit 0
+    fi
+fi
+
+rm -f /tmp/last_installed_sdk
+
 PKG_DIR=$1
 
 find $PKG_DIR -name \*.rpm -print | grep -v src.rpm | \
   xargs sudo rpm -Uvh --force
+
+echo "devel" > /tmp/last_installed_sdk
