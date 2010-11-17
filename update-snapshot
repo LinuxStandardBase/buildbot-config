@@ -2,16 +2,16 @@
 
 SCRIPT_PATH=$(dirname $0)
 TOP_PATH=/data/buildbot/lsb-snapshots
-SNAPSHOT_PATH=snapshots
-UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp/pub/lsb
+SNAPSHOT_PATH=pub/lsb/snapshots
+REPOSITORY_PATH=pub/lsb/repositories
+UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp
 
 BZR_PROGRESS_BAR=none
 FTP_ROOT=$TOP_PATH
-FTP_LSB_PATH=.
 BUILD_DEBIAN=yes
 DEB_PKG_CACHE=/data/buildbot/debcache-snapshot
 LSB_VERSION=snapshot
-export BZR_PROGRESS_BAR FTP_ROOT FTP_LSB_PATH BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
+export BZR_PROGRESS_BAR FTP_ROOT BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
 
 $SCRIPT_PATH/update-snapshot-sdk
 $SCRIPT_PATH/update-snapshot-prj
@@ -26,9 +26,9 @@ rm -rf repogen
 
 cd $TOP_PATH/$SNAPSHOT_PATH
 rsync -a --delete * $UPLOAD_TARGET/$SNAPSHOT_PATH
-cd $TOP_PATH/repositories/yum
-rsync -a --delete lsb-snapshot $UPLOAD_TARGET/repositories/yum
-cd $TOP_PATH/repositories/debian
-rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/repositories/debian
+cd $TOP_PATH/$REPOSITORY_PATH/yum
+rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/yum
+cd $TOP_PATH/$REPOSITORY_PATH/debian
+rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian
 cd dists
-rsync -a --delete lsb-snapshot $UPLOAD_TARGET/repositories/debian/dists
+rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian/dists

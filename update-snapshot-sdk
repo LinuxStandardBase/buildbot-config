@@ -1,7 +1,7 @@
 #!/bin/sh -e
 
 master_path=/data/buildbot/master_lsb
-snapshot_path=/data/buildbot/lsb-snapshots/snapshots
+snapshot_path=/data/buildbot/lsb-snapshots/pub/lsb/snapshots
 
 sdk_projects="build_env lsbdev-c++ lsbdev-qt lsbdev-qt3"
 
