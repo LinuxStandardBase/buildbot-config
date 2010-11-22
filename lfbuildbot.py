@@ -129,6 +129,12 @@ class MultiJobFile:
                     self.projects.append(prj.strip())
             elif name == "build_type":
                 self.build_type = value
+            elif name == "architectures":
+                new_archs = []
+                for arch in value.split(","):
+                    if arch in self.archs:
+                        new_archs.append(arch)
+                self.archs = new_archs
             else:
                 raise JobParseError("invalid key: " + name)
 
