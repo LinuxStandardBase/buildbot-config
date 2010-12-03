@@ -76,16 +76,24 @@ the path.
 the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz (for the
 buildbot user).
 
-8.  Add the command to start the slave on reboot.  If you installed
+8.  If there's a beta in progress, download a copy of the current beta
+SDK bundle tarball to the slave, and symlink it to
+$HOME/lsb-beta-sdk.tar.gz (again, for the buildbot user).  If this is
+not done, beta builds may not work.  As an alternative, if the SDK
+itself is not in beta, symlink the production SDK to the beta
+filename.
+
+9.  Add the command to start the slave on reboot.  If you installed
 buildbot on the slave via a distro package, this may be set up
 already; see your distro's buildbot docs.  If not, a line like this in
 buildbot's crontab should do the trick:
 
 @reboot buildbot start /path/to/slave
 
-At that point, you should be able to start the slave.  Force each job
-scheduled to be run on that slave, or let them run as scheduled, to
-make sure you didn't miss anything.
+10. Start the slave.
+
+11. Force a build of the "build-sdk" job for that architecture.  This
+ensures that there's a snapshot SDK available for snapshot builds.
 
 Using the configuration
 -----------------------
@@ -101,8 +109,59 @@ tests is called "python-test-ia64".  For stuff built out of
 built as a single build, called "build-sdk" (plus the arch), and the
 appbat is split into two builds, called "libbat" and "appbat".
 
-The LSB side is also special because we have a distinction between
-"production" and "development" builds, which affect things like
-package version numbers.  By default, all builds are "development".
-To cause a "production" build, manually trigger a build, and include
-the string "production:" in the reason for the build.
+The LSB side is also special because we have different types of
+builds: "production", "development", and "beta".  Depending on the
+type of build, different versions of the SDK are used to build, and
+package versions may get embedded dates.
+
+By default, all builds are "production" builds unless done from the
+devel tree, in which case they default to "development".  The build
+type can be forced by supplying a reason for the build which starts
+with either "production:" or "beta:".  (It's assumed that development
+builds of released products aren't needed.)  This ultimately
+translates into a "build_type" property on the build, which drives the
+other processes in the build.
+
+MultiScheduler
+--------------
+
+Because the LSB builder has so many builds, all related in certain
+ways, we provide a system for starting multiple builds at once with a
+single action.
+
+Currently, this takes the form of a spooler directory, which is
+watched for spool files describing a build request.  The files consist
+of multiple lines of property=value pairs.  Properties recognized:
+
+ branch_name - Name of the bzr branch directory containing the projects
+ in question.  For example, if a project to build is found at
+ "http://bzr.linuxfoundation.org/lsb/devel/build_env", the branch_name
+ for this build would be "devel".
+
+ projects - Comma-separated list of projects to build.  The project
+ name consists of the builder name in buildbot minus the trailing
+ architecture identifier.  For example, if one of the buildbot builders
+ to be triggered is "azov-qt3-tests-x86_64", the project would be
+ "azov-qt3-tests".
+
+ architectures - Comma-separated list of architectures to build for.
+ Using the previous example for "projects", the architecture would be
+ "x86_64".
+
+ tag - the bzr tag name as passed to the "-r" parameter of bzr, minus
+ the "tag:" specifier.
+
+ build_type - the type of build being done.  This must be "normal",
+ "production", or "beta".
+
+A minimal request file must contain the "projects" property.  The rest
+of the properties default to a normal build, against the tip of the
+"devel" branch for each project, for all architectures.
+
+At some point, scripts will be provided to create and submit build
+requests from the command line.  Until this is available, build
+request files must be built manually, and copied to the job directory
+specified in the MultiScheduler's configuration (currently
+/var/buildbot).  It is not recommended to create the files in the
+spool directory, as the scheduler will attempt to parse and delete
+them immediately upon seeing them.
