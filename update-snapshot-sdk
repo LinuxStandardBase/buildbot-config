@@ -16,7 +16,8 @@ rm -rf junk
 mkdir junk
 cd junk
 
-for f in $master_path/lsb-sdk-devel-*tar.gz; do
+for f in $(ls $master_path/lsb-sdk-devel-*tar.gz | egrep 'devel-[^-]*.tar.gz')
+do
     tar xzf $f
     for prj in $sdk_projects; do
 	ls sdk-results/$prj/*.rpm | egrep -v src.rpm | \
