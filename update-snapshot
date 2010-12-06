@@ -1,5 +1,6 @@
 #!/bin/sh -e
 
+LOCKFILE_PATH=/data/buildbot/update-snapshot.lock
 SCRIPT_PATH=$(dirname $0)
 TOP_PATH=/data/buildbot/lsb-snapshots
 SNAPSHOT_PATH=pub/lsb/snapshots
@@ -12,6 +13,17 @@ BUILD_DEBIAN=yes
 DEB_PKG_CACHE=/data/buildbot/debcache-snapshot
 LSB_VERSION=snapshot
 export BZR_PROGRESS_BAR FTP_ROOT BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
+
+echo $$ > $LOCKFILE_PATH.$$ 2>/dev/null || exit 1
+ln $LOCKFILE_PATH.$$ $LOCKFILE_PATH 2>/dev/null || {
+    kill -0 $(cat $LOCKFILE_PATH) 2> /dev/null || {
+	rm -f $LOCKFILE_PATH
+    }
+    rm -f $LOCKFILE_PATH.$$
+    exit 1
+}
+
+rm -f $LOCKFILE_PATH.$$
 
 $SCRIPT_PATH/update-snapshot-sdk
 $SCRIPT_PATH/update-snapshot-prj
@@ -32,3 +44,5 @@ cd $TOP_PATH/$REPOSITORY_PATH/debian
 rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian
 cd dists
 rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian/dists
+
+rm -f $LOCKFILE_PATH
