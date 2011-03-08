@@ -1,7 +1,9 @@
 #!/bin/sh -e
 
 LOCKFILE_PATH=/data/buildbot/update-snapshot.lock
+LASTUPDATE_PATH=/data/buildbot/update-snapshot.lastupdate
 SCRIPT_PATH=$(dirname $0)
+TARBALL_PATH=/data/buildbot/master_lsb
 TOP_PATH=/data/buildbot/lsb-snapshots
 SNAPSHOT_PATH=pub/lsb/snapshots
 REPOSITORY_PATH=pub/lsb/repositories
@@ -14,16 +16,37 @@ DEB_PKG_CACHE=/data/buildbot/debcache-snapshot
 LSB_VERSION=snapshot
 export BZR_PROGRESS_BAR FTP_ROOT BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
 
+# Make sure only one of this script runs at a time.
+
 echo $$ > $LOCKFILE_PATH.$$ 2>/dev/null || exit 1
 ln $LOCKFILE_PATH.$$ $LOCKFILE_PATH 2>/dev/null || {
     kill -0 $(cat $LOCKFILE_PATH) 2> /dev/null || {
 	rm -f $LOCKFILE_PATH
     }
     rm -f $LOCKFILE_PATH.$$
-    exit 1
+    exit 0
 }
 
 rm -f $LOCKFILE_PATH.$$
+
+# Check that there's a real update needed; incron isn't smart enough
+# to only fire on actual tarball uploads.
+
+if [ -f $LASTUPDATE_PATH ]; then
+    if [ $(find $TARBALL_PATH -name '*tar.gz' -newer $LASTUPDATE_PATH -print \
+           | wc -l) -eq 0 ]; then
+	rm -f $LOCKFILE_PATH
+	exit 0
+    fi
+fi
+
+# Record the last update time.  We do this here to minimize the race
+# condition between the above check and new uploads, so that a newly
+# finished job doesn't slip through the cracks.
+
+touch $LASTUPDATE_PATH
+
+# Actually do the update.
 
 $SCRIPT_PATH/update-snapshot-sdk
 $SCRIPT_PATH/update-snapshot-prj
@@ -44,5 +67,7 @@ cd $TOP_PATH/$REPOSITORY_PATH/debian
 rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian
 cd dists
 rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian/dists
+
+# Release the lock.
 
 rm -f $LOCKFILE_PATH
