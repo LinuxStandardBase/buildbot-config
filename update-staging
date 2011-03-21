@@ -1,0 +1,71 @@
+#!/usr/bin/python
+
+# update-staging - script to write out staging results.
+
+import sys
+import os
+import tarfile
+import shutil
+
+master_path = "/data/buildbot/master_lsb"
+staging_path = "/data/buildbot/lsb-snapshots/pub/lsb/staging"
+src_arch = 'x86_64'
+
+def parse_tarball_name(tarball):
+    fn_components = tarball.split('-')
+    arch = fn_components[-1].replace('.tar.gz', '')
+    area = fn_components[-2]
+    if fn_components[-3] == 'devel':
+        prj_index = -3
+    else:
+        prj_index = -2
+    prj = '-'.join(fn_components[:prj_index])
+    return (prj, area, arch)
+
+def main():
+    shutil.rmtree(staging_path)
+
+    for tarball in os.listdir(master_path):
+        if tarball[-6:] != 'tar.gz':
+            continue
+
+        # Parse filename.
+
+        (prj, area, arch) = parse_tarball_name(tarball)
+
+        # Skip snapshot material and devchk.
+
+        if area == 'devel' or prj == 'devchk':
+            continue
+
+        # Make sure that the staging area is there.
+
+        prj_staging_path = os.path.join(staging_path, area, prj)
+        if not os.path.exists(prj_staging_path):
+            os.makedirs(prj_staging_path)
+        os.chdir(prj_staging_path)
+
+        # Unpack the tarball and move its contents into the staging area.
+
+        t = tarfile.open(os.path.join(master_path, tarball))
+        t.extractall()
+
+        # Move its contents out of the results directory.  Skip
+        # source RPMs for all archs except one.
+
+        if prj == "lsb-sdk":
+            results_path = "sdk-results"
+        else:
+            results_path = "results"
+
+        for (dp, dn, fnlist) in os.walk(results_path):
+            for fn in fnlist:
+                if arch == src_arch or fn[-7:] != 'src.rpm':
+                    shutil.move(os.path.join(dp, fn), os.path.join('.', fn))
+
+        # Clear out the results directory.
+
+        shutil.rmtree(results_path)
+
+if __name__ == "__main__":
+    main()

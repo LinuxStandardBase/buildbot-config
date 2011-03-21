@@ -7,6 +7,7 @@ TARBALL_PATH=/data/buildbot/master_lsb
 TOP_PATH=/data/buildbot/lsb-snapshots
 SNAPSHOT_PATH=pub/lsb/snapshots
 REPOSITORY_PATH=pub/lsb/repositories
+STAGING_PATH=pub/lsb/staging
 UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp
 
 BZR_PROGRESS_BAR=none
@@ -46,10 +47,12 @@ fi
 
 touch $LASTUPDATE_PATH
 
-# Actually do the update.
+# Actually do the updates.  Snapshot first.
 
 $SCRIPT_PATH/update-snapshot-sdk
 $SCRIPT_PATH/update-snapshot-prj
+
+# Create snapshot repositories.
 
 cd $TOP_PATH
 bzr checkout http://bzr.linuxfoundation.org/lsb/devel/repogen
@@ -59,8 +62,16 @@ make -s install-snapshot
 cd ..
 rm -rf repogen
 
+# Staging.
+
+$SCRIPT_PATH/update-staging
+
+# Send updates to the FTP site.
+
 cd $TOP_PATH/$SNAPSHOT_PATH
 rsync -a --delete * $UPLOAD_TARGET/$SNAPSHOT_PATH
+cd $TOP_PATH/$STAGING_PATH
+rsync -a --delete * $UPLOAD_TARGET/$STAGING_PATH
 cd $TOP_PATH/$REPOSITORY_PATH/yum
 rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/yum
 cd $TOP_PATH/$REPOSITORY_PATH/debian
