@@ -255,7 +255,7 @@ class LSBBuildCommand(ShellCommand):
 class LSBBuildPackage(LSBBuildCommand):
     def __init__(self, makeargs=False, **kwargs):
         if "command" not in kwargs:
-            kwargs["command"] = "cd package && make BUILD_NO_DEB=1"
+            kwargs["command"] = "cd package && make BUILD_NO_DEB=1 BZRTREES=$(dirname $PWD)/.."
             makeargs = True
         LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
 
