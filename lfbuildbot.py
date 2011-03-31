@@ -42,17 +42,30 @@ def extract_branch_name(branch):
 # the same version control repository.
 
 class IndepTriggerable(Triggerable):
-    def __init__(self, name, builderNames, useSourceStamp=False):
-        Triggerable.__init__(self, name, builderNames)
+    def __init__(self, name, builderNames, defaultProject,
+                 properties={}, useSourceStamp=False):
+        Triggerable.__init__(self, name, builderNames, properties)
+        self.defaultProject = defaultProject
         self.useSourceStamp = useSourceStamp
 
     def trigger(self, ss, set_props=None):
         if not self.useSourceStamp:
-            return Triggerable.trigger(self, 
-                                       SourceStamp(None, None, None, None), 
-                                       set_props)
-        else:
-            return Triggerable.trigger(self, ss, set_props)
+            # This comes from Triggerable.  We need the current set
+            # of properties, including those set by the trigger.  It
+            # gets repeated inside Triggerable, but oh well; there's
+            # no way to pass these calculated properties into the base.
+            props = Properties()
+            props.updateFromProperties(self.properties)
+            if set_props: props.updateFromProperties(set_props)
+
+            # Now, override whatever SourceStamp was provided with
+            # one determined by the branch_name property (however
+            # we got it).
+            branch_name = props.getProperty("branch_name", default="devel")
+            branch = "lsb/%s/%s" % (branch_name, self.defaultProject)
+            ss = SourceStamp(branch, None, None, None)
+
+        return Triggerable.trigger(self, ss, set_props)
 
 # Job file parser for MultiScheduler.  It turns a job file into a number
 # of BuildRequest objects.
