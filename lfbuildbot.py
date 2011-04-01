@@ -15,7 +15,7 @@ from twisted.application import internet
 from twisted.internet import reactor
 
 from buildbot import buildset
-from buildbot.process import properties
+from buildbot.process.properties import Properties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
 from buildbot.scheduler import BaseUpstreamScheduler, Triggerable
