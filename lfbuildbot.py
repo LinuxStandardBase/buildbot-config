@@ -102,7 +102,7 @@ class MultiJobFile:
 
         if not self.branch_name or not self.projects:
             raise JobParseError("missing information in job file")
-        if self.build_type not in ("normal", "production", "beta"):
+        if self.build_type not in ("normal", "production", "devel", "beta"):
             raise JobParseError("invalid build type: " + self.build_type)
 
     def __iter__(self):
@@ -226,7 +226,10 @@ class LSBBuildCommand(ShellCommand):
 
         if self.getProperty("build_type") in ("beta", "production") \
                 or found_lsb_version:
-            args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
+            if self.build.source.revision:
+                args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
+            else:
+                args.append("OFFICIAL_RELEASE=-1")
 
         if self.getProperty("build_type") == "beta":
             args.append("SKIP_DEVEL_VERSIONS=no")
@@ -240,6 +243,8 @@ class LSBBuildCommand(ShellCommand):
             return "beta"
         elif "production:" in self.build.reason:
             return "production"
+        elif "devel:" in self.build.reason:
+            return "devel"
         else:
             return "normal"
 
@@ -295,8 +300,10 @@ class LSBReloadSDK(LSBBuildCommand):
     def _is_devel(self):
         "Figure out whether we're being called on a devel tree."
 
-        return self.getProperty("build_type") == "normal" and \
-               self.getProperty("branch_name") == "devel"
+        build_type = self.getProperty("build_type")
+        return build_type == "devel" or \
+            (build_type == "normal" and 
+             self.getProperty("branch_name") == "devel")
 
     def _is_beta(self):
         "Figure out whether we're being called for a beta build."
