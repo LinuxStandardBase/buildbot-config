@@ -43,10 +43,11 @@ def extract_branch_name(branch):
 
 class IndepTriggerable(Triggerable):
     def __init__(self, name, builderNames, defaultProject,
-                 properties={}, useSourceStamp=False):
+                 properties={}, useSourceStamp=False, alwaysDevel=False):
         Triggerable.__init__(self, name, builderNames, properties)
         self.defaultProject = defaultProject
         self.useSourceStamp = useSourceStamp
+        self.alwaysDevel = alwaysDevel
 
     def trigger(self, ss, set_props=None):
         if not self.useSourceStamp:
@@ -61,7 +62,10 @@ class IndepTriggerable(Triggerable):
             # Now, override whatever SourceStamp was provided with
             # one determined by the branch_name property (however
             # we got it).
-            branch_name = props.getProperty("branch_name", default="devel")
+            if self.alwaysDevel:
+                branch_name = "devel"
+            else:
+                branch_name = props.getProperty("branch_name", default="devel")
             branch = "lsb/%s/%s" % (branch_name, self.defaultProject)
             ss = SourceStamp(branch, None, None, None)
 
