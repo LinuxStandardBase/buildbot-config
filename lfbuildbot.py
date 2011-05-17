@@ -295,6 +295,37 @@ class LSBBuildFromPackaging(LSBBuildCommand):
             makeargs = True
         LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
 
+# Building stuff from appbat is "special".  We need makeargs processing,
+# but the make command changes for different steps.  So, force the command
+# to be a shell command, and default to always adding the make args.
+
+class LSBBuildAppbat(LSBBuildCommand):
+    def __init__(self, makeargs=True, **kwargs):
+        if "command" not in kwargs:
+            raise KeyError, "command argument required for appbat builds"
+        if kwargs["command"] is list:
+            kwargs["command"] = " ".join(kwargs["command"])
+        LSBBuildCommand.__init__(self, makeargs=makeargs, **kwargs)
+
+# The appbat build is so special, we need a configure script runner for it.
+# This class sets the environment-like make args (FOO=bar) in the
+# slave's environment, because we can't rely on make to do that.
+
+class LSBConfigureAppbat(LSBBuildCommand):
+    def __init__(self, **kwargs):
+        kwargs["makeargs"] = False
+        LSBBuildCommand.__init__(self, **kwargs)
+
+    def start(self):
+        self._set_build_props()
+
+        for env_item in self._get_make_args():
+            if "=" in env_item:
+                (name, value) = env_item.split("=")
+                self.build.slaveEnvironment[name] = value
+
+        LSBBuildCommand.start(self)
+
 # Reload the SDK.  This class figures out what SDK we need (devel, stable,
 # or beta) and installs it.
 
