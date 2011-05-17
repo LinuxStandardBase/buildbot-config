@@ -255,16 +255,27 @@ class LSBBuildCommand(ShellCommand):
     def _set_build_props(self):
         "Set build-time properties."
 
+        current_branch = self.getProperty("branch")
+        calc_branch_name = extract_branch_name(current_branch)
+
         try:
-            self.getProperty("branch_name")
+            set_branch_name = self.getProperty("branch_name")
         except KeyError:
-            self.setProperty("branch_name", 
-                             extract_branch_name(self.getProperty("branch")))
+            set_branch_name = None
+            self.setProperty("branch_name", calc_branch_name)
 
         try:
             self.getProperty("build_type")
         except KeyError:
             self.setProperty("build_type", self._calc_build_type())
+
+        # Under certain circumstances, branch_name and branch can conflict.
+        # Detect these situations and override the branch as needed.
+
+        if set_branch_name and calc_branch_name != set_branch_name:
+            new_branch = current_branch.replace(calc_branch_name,
+                                                set_branch_name)
+            self.setProperty("branch", new_branch)
 
     def start(self):
         self._set_build_props()
