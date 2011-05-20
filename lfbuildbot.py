@@ -230,7 +230,8 @@ class LSBBuildCommand(ShellCommand):
 
         if self.getProperty("build_type") in ("beta", "production") \
                 or found_lsb_version:
-            if self.build.source.revision:
+            if self.build.source.revision and \
+               self.build.source.revision[:4] == "tag:":
                 args.append("OFFICIAL_RELEASE=%s" % self.build.source.revision)
             else:
                 args.append("OFFICIAL_RELEASE=-1")
