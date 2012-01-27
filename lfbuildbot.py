@@ -163,7 +163,7 @@ class MultiScheduler(BaseScheduler):
 
     def __init__(self, name, builderNames, jobdir, repos, archs, indep_prj, 
                  indep_arch, prop_dict={}):
-        BaseScheduler.__init__(self, name, prop_dict)
+        BaseScheduler.__init__(self, name, builderNames, prop_dict)
         self.builderNames = builderNames
         self.jobdir = jobdir
         self.repos = repos
