@@ -14,11 +14,11 @@ from twisted.python import log
 from twisted.application import internet
 from twisted.internet import reactor
 
-from buildbot import buildset
 from buildbot.process.properties import Properties
 from buildbot.steps.shell import ShellCommand
 from buildbot.steps.master import MasterShellCommand
-from buildbot.scheduler import BaseUpstreamScheduler, Triggerable
+from buildbot.schedulers.base import BaseScheduler
+from buildbot.schedulers.triggerable import Triggerable
 from buildbot.sourcestamp import SourceStamp
 
 # Helper function.  This takes a branch as passed into buildbot, and
@@ -130,9 +130,8 @@ class MultiJobFile:
                 builderNames = ["%s-%s" % (prj, arch)]
                 branch = "lsb/%s/%s" % (self.branch_name, repo)
                 ss = SourceStamp(branch, revision, None, None)
-                yield buildset.BuildSet(builderNames, ss, 
-                                        reason="MultiScheduler job",
-                                        properties=self.properties)
+                yield (ss, builderNames, self.properties,
+                       "MultiScheduler job")
 
     def parse(self):
         for line in self.f:
@@ -158,13 +157,13 @@ class MultiJobFile:
 # Scheduler which can start a number of builds at once.  These are
 # grouped by project; they are started across all supported architectures.
 
-class MultiScheduler(BaseUpstreamScheduler):
+class MultiScheduler(BaseScheduler):
     compare_attrs = ('name', 'builderNames', 'jobdir', 'repos', 'archs', 
                      'indep_prj', 'properties')
 
     def __init__(self, name, builderNames, jobdir, repos, archs, indep_prj, 
                  indep_arch, prop_dict={}):
-        BaseUpstreamScheduler.__init__(self, name, prop_dict)
+        BaseScheduler.__init__(self, name, prop_dict)
         self.builderNames = builderNames
         self.jobdir = jobdir
         self.repos = repos
@@ -180,11 +179,11 @@ class MultiScheduler(BaseUpstreamScheduler):
         return []
 
     def startService(self):
-        BaseUpstreamScheduler.startService(self)
+        BaseScheduler.startService(self)
         self.poller = reactor.callLater(10, self.poll)
 
     def stopService(self):
-        BaseUpstreamScheduler.stopService(self)
+        BaseScheduler.stopService(self)
         self.poller.cancel()
         self.poller = None
 
@@ -196,8 +195,12 @@ class MultiScheduler(BaseUpstreamScheduler):
                     jobfile = MultiJobFile(f_full, self.repos, self.archs,
                                            self.indep_prj, self.indep_arch, 
                                            self.properties)
-                    for bs in jobfile:
-                        self.submitBuildSet(bs)
+                    for (ss, builderNames, properties, reason) in jobfile:
+                        d = ss.getSourceStampId(self.master)
+                        d.addCallback(self.buildset_cb,
+                                      builderNames=builderNames,
+                                      properties=properties,
+                                      reason=reason)
                 finally:
                     os.unlink(f_full)
             except JobParseError, e:
@@ -205,6 +208,11 @@ class MultiScheduler(BaseUpstreamScheduler):
                 continue
 
         self.poller = reactor.callLater(10, self.poll)
+
+    def buildset_cb(ssid, builderNames, properties, reason):
+        self.addBuildsetForSourceStamp(self, ssid, reason=reason,
+                                       builderNames=builderNames,
+                                       properties=properties)
 
 class PropMasterShellCommand(MasterShellCommand):
     def start(self):
