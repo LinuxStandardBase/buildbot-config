@@ -24,24 +24,16 @@ currently four types of files here:
 Setup
 -----
 
-The setup procedure for completely rebuilding the buildbot config is
-as follows:
-
-1.  On the master, set up buildbot and create two masters according to
-the directions in the documentation.  One will be for LSB; the other
-will be for Moblin.
-
-2.  Symlink each foo_master.cfg from this project as master.cfg in
-each new master.
-
-3.  Symlink each .py file to each master directory as well.
-
-4.  Start each master.
-
-5.  Set up the slaves, as described below.
+Setting up the buildbot master is now done via Puppet.  In the LSB's
+Puppet configuration, add "include buildbot::master" to the node's
+definition.
 
 Slave setup
 -----------
+
+NOTE: slave setup is transitioning to Puppet as well.  The following
+procedure documents how to add a build slave on a non-Puppet machine,
+but for best results, use Puppet to deploy the build slave setup.
 
 While the masters are expected to be more-or-less permanent, the
 slaves are completely replaceable.  Here's the procedure for setting
@@ -69,8 +61,9 @@ remove packages.  Something like this should do:
 
 buildbot ALL=NOPASSWD: /bin/rpm
 
-6.  Copy the scripts in this project's "slavescripts" directory into
-the path.
+6.  Copy the scripts from the puppet-lsb project, under
+"modules/buildbot/files/slavescripts", into a directory on the default
+system path.
 
 7.  Download a copy of the current released LSB SDK bundle tarball to
 the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz (for the
