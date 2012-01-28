@@ -70,6 +70,11 @@ with these keys:
   you may set this value to any of (case-insensitive) "Yes", "Y", "True", or
   "T" to have the buildbot master append the branch name to the baseURL.
 
+Note: The bzr smart server (as of version 2.2.2) doesn't know how to resolve
+bzr:// urls into absolute paths so any paths in locations.conf won't match,
+hence no change notifications will be sent to Buildbot. Setting configuration
+parameters globally or in-branch might still work.
+
 When buildbot no longer has a hardcoded password, it will be a configuration
 option here as well.
 
@@ -77,32 +82,7 @@ option here as well.
 Poller
 ------
 
-Put this file somewhere that your buildbot configuration can import it.  Even
-in the same directory as the master.cfg should work.  Install the poller in
-the buildbot configuration as with any other change source.  Minimally,
-provide a URL that you want to poll (bzr://, bzr+ssh://, or lp:), though make
-sure the buildbot user has necessary privileges.  You may also want to specify
-these optional values.
-
-poll_interval: the number of seconds to wait between polls.  Defaults to 10
-               minutes.
-
-branch_name: any value to be used as the branch name.  Defaults to None, or
-             specify a string, or specify the constants from this file SHORT
-             or FULL to get the short branch name or full branch address.
-
-blame_merge_author: normally, the user that commits the revision is the user
-                    that is responsible for the change. When run in a pqm
-                    (Patch Queue Manager, see https://launchpad.net/pqm)
-                    environment, the user that commits is the Patch Queue
-                    Manager, and the user that committed the merged, *parent*
-                    revision is responsible for the change. set this value to
-                    True if this is pointed against a PQM-managed branch.
-
-rebuild_on_restart: since the poller does not save state when buildbot itself
-                    is restarted, decide whether to rebuild when the last
-                    revision information is missing, or just set it.  Defaults
-                    to False (don't flag changes for rebuild when restarting).
+See the Buildbot manual.
 
 -------------------
 Contact Information
@@ -214,7 +194,7 @@ if DEFINE_POLLER:
         compare_attrs = ['url']
 
         def __init__(self, url, poll_interval=10*60, blame_merge_author=False,
-                     branch_name=None, rebuild_on_restart=False):
+                     branch_name=None, category=None):
             # poll_interval is in seconds, so default poll_interval is 10
             # minutes.
             # bzr+ssh://bazaar.launchpad.net/~launchpad-pqm/launchpad/devel/
@@ -226,21 +206,34 @@ if DEFINE_POLLER:
             self.loop = twisted.internet.task.LoopingCall(self.poll)
             self.blame_merge_author = blame_merge_author
             self.branch_name = branch_name
-            self.rebuild_on_restart = rebuild_on_restart
-            self.polling = False
+            self.category = category
 
         def startService(self):
             twisted.python.log.msg("BzrPoller(%s) starting" % self.url)
             buildbot.changes.base.ChangeSource.startService(self)
-            twisted.internet.reactor.callWhenRunning(
-                self.loop.start, self.poll_interval)
+            if self.branch_name is FULL:
+                ourbranch = self.url
+            elif self.branch_name is SHORT:
+                # We are in a bit of trouble, as we cannot really know what our
+                # branch is until we have polled new changes.
+                # Seems we would have to wait until we polled the first time,
+                # and only then do the filtering, grabbing the branch name from
+                # whatever we polled.
+                # For now, leave it as it was previously (compare against
+                # self.url); at least now things work when specifying the
+                # branch name explicitly.
+                ourbranch = self.url
+            else:
+                ourbranch = self.branch_name
             for change in reversed(self.parent.changes):
-                if change.branch == self.url:
+                if change.branch == ourbranch:
                     self.last_revision = change.revision
                     break
             else:
                 self.last_revision = None
             self.polling = False
+            twisted.internet.reactor.callWhenRunning(
+                self.loop.start, self.poll_interval)
 
         def stopService(self):
             twisted.python.log.msg("BzrPoller(%s) shutting down" % self.url)
@@ -287,11 +280,10 @@ if DEFINE_POLLER:
             changes = []
             change = generate_change(
                 branch, blame_merge_author=self.blame_merge_author)
-            if self.last_revision is None and not self.rebuild_on_restart:
-                self.last_revision = change['revision']
             if (self.last_revision is None or
                 change['revision'] > self.last_revision):
                 change['branch'] = branch_name
+                change['category'] = self.category
                 changes.append(change)
                 if self.last_revision is not None:
                     while self.last_revision + 1 < change['revision']:
@@ -307,7 +299,7 @@ if DEFINE_POLLER:
             d = twisted.internet.defer.Deferred()
             def _add_change():
                 d.callback(
-                    self.parent.addChange(change))
+                    self.parent.addChange(change, src='bzr'))
             twisted.internet.reactor.callLater(0, _add_change)
             return d
 
@@ -427,6 +419,7 @@ def send_change(branch, old_revno, old_revid, new_revno, new_revid, hook):
     def sendChanges(remote):
         """Send changes to buildbot."""
         bzrlib.trace.mutter("bzrbuildout sending changes: %s", change)
+        change['src'] = 'bzr'
         return remote.callRemote('addChange', change)
 
     deferred.addCallback(sendChanges)
@@ -465,12 +458,12 @@ def post_change_branch_tip(result):
                      result.old_revid, result.old_revid,
                      result.new_revno, result.new_revid, CHANGE_VALUE)
 
-#bzrlib.branch.Branch.hooks.install_named_hook(
-#    'post_commit', post_commit,
-#    'send change to buildbot master')
-#bzrlib.branch.Branch.hooks.install_named_hook(
-#    'post_push', post_push,
-#    'send change to buildbot master')
-#bzrlib.branch.Branch.hooks.install_named_hook(
-#    'post_change_branch_tip', post_change_branch_tip,
-#    'send change to buildbot master')
+bzrlib.branch.Branch.hooks.install_named_hook(
+    'post_commit', post_commit,
+    'send change to buildbot master')
+bzrlib.branch.Branch.hooks.install_named_hook(
+    'post_push', post_push,
+    'send change to buildbot master')
+bzrlib.branch.Branch.hooks.install_named_hook(
+    'post_change_branch_tip', post_change_branch_tip,
+    'send change to buildbot master')
