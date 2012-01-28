@@ -225,12 +225,7 @@ if DEFINE_POLLER:
                 ourbranch = self.url
             else:
                 ourbranch = self.branch_name
-            for change in reversed(self.parent.changes):
-                if change.branch == ourbranch:
-                    self.last_revision = change.revision
-                    break
-            else:
-                self.last_revision = None
+            self.last_revision = None
             self.polling = False
             twisted.internet.reactor.callWhenRunning(
                 self.loop.start, self.poll_interval)
