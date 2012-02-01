@@ -151,10 +151,10 @@ def generate_change(branch,
     new_rev = repository.get_revision(new_revid)
     if blame_merge_author:
         # this is a pqm commit or something like it
-        change['who'] = repository.get_revision(
+        change['author'] = repository.get_revision(
             new_rev.parent_ids[-1]).get_apparent_authors()[0]
     else:
-        change['who'] = new_rev.get_apparent_authors()[0]
+        change['author'] = new_rev.get_apparent_authors()[0]
     # maybe useful to know:
     # name, email = bzrtools.config.parse_username(change['who'])
     change['comments'] = new_rev.message
@@ -258,8 +258,7 @@ if DEFINE_POLLER:
                     twisted.python.log.err()
                 else:
                     for change in changes:
-                        yield self.addChange(
-                            buildbot.changes.changes.Change(**change))
+                        yield self.addChange(change)
                         self.last_revision = change['revision']
             finally:
                 self.polling = False
@@ -291,12 +290,7 @@ if DEFINE_POLLER:
             return changes
 
         def addChange(self, change):
-            d = twisted.internet.defer.Deferred()
-            def _add_change():
-                d.callback(
-                    self.parent.addChange(change, src='bzr'))
-            twisted.internet.reactor.callLater(0, _add_change)
-            return d
+            return self.master.addChange(**change)
 
 #############################################################################
 # hooks
