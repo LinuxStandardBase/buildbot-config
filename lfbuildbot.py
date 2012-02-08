@@ -267,10 +267,8 @@ class LSBBuildCommand(ShellCommand):
         current_branch = self.getProperty("branch")
         calc_branch_name = extract_branch_name(current_branch)
 
-        try:
-            set_branch_name = self.getProperty("branch_name")
-        except KeyError:
-            set_branch_name = None
+        set_branch_name = self.getProperty("branch_name", None)
+        if set_branch_name is None:
             self.setProperty("branch_name", calc_branch_name)
 
         try:
