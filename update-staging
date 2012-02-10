@@ -7,8 +7,8 @@ import os
 import tarfile
 import shutil
 
-master_path = "/data/buildbot/master_lsb"
-staging_path = "/data/buildbot/ftpdir/pub/lsb/staging"
+master_path = "/opt/buildbot/lsb-master"
+staging_path = "/opt/buildbot/ftpdir/pub/lsb/staging"
 src_arch = 'x86_64'
 
 def parse_tarball_name(tarball):

@@ -1,19 +1,19 @@
 #!/bin/sh -e
 
-LOCKFILE_PATH=/data/buildbot/update-snapshot.lock
-LASTUPDATE_PATH=/data/buildbot/update-snapshot.lastupdate
+LOCKFILE_PATH=/opt/buildbot/update-snapshot.lock
+LASTUPDATE_PATH=/opt/buildbot/update-snapshot.lastupdate
 SCRIPT_PATH=$(dirname $0)
-TARBALL_PATH=/data/buildbot/master_lsb
-TOP_PATH=/data/buildbot/ftpdir
+TARBALL_PATH=/opt/buildbot/lsb-master
+TOP_PATH=/opt/buildbot/ftpdir
 SNAPSHOT_PATH=pub/lsb/snapshots
 REPOSITORY_PATH=pub/lsb/repositories
 STAGING_PATH=pub/lsb/staging
-UPLOAD_TARGET=autobuild@spidey.linuxfoundation.org:/srv/ftp
+UPLOAD_TARGET=/srv/ftp
 
 BZR_PROGRESS_BAR=none
 FTP_ROOT=$TOP_PATH
 BUILD_DEBIAN=yes
-DEB_PKG_CACHE=/data/buildbot/debcache-snapshot
+DEB_PKG_CACHE=/opt/buildbot/debcache-snapshot
 LSB_VERSION=snapshot
 export BZR_PROGRESS_BAR FTP_ROOT BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
 
