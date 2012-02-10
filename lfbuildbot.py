@@ -235,6 +235,10 @@ class LSBBuildCommand(ShellCommand):
         found_lsb_version = re.match(r'^\d+\.\d+$', branch_name)
         if found_lsb_version:
             args.append("LSBCC_LSBVERSION=%s" % branch_name)
+            args.append("PKG_CONFIG_DIR=/opt/lsb/lib-%s/pkgconfig" 
+                        % branch_name)
+        else:
+            args.append("PKG_CONFIG_DIR=/opt/lsb/lib/pkgconfig")
 
         if self.getProperty("build_type") in ("beta", "production") \
                 or found_lsb_version:
