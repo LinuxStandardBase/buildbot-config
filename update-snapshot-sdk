@@ -5,6 +5,7 @@ snapshot_path=/opt/buildbot/ftpdir/pub/lsb/snapshots
 
 sdk_projects="build_env lsbdev-c++ lsbdev-qt lsbdev-qt3"
 
+mkdir -p $snapshot_path
 cd $snapshot_path
 
 for prj in $sdk_projects; do
