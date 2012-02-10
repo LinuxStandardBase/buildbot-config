@@ -76,10 +76,12 @@ if [ -d $TOP_PATH/$STAGING_PATH ]; then
 fi
 cd $TOP_PATH/$REPOSITORY_PATH/yum
 rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/yum
-cd $TOP_PATH/$REPOSITORY_PATH/debian
-rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian
-cd dists
-rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian/dists
+if [ -d $TOP_PATH/$REPOSITORY_PATH/debian ]; then
+    cd $TOP_PATH/$REPOSITORY_PATH/debian
+    rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian
+    cd dists
+    rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian/dists
+fi
 
 # Release the lock.
 
