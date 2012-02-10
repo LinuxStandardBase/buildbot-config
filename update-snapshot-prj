@@ -14,7 +14,8 @@ for prj in $projects; do
     mkdir $prj
     cd $prj
 
-    for f in $(ls $master_path/$prj-devel-*.tar.gz|egrep 'devel-[^-]*.tar.gz')
+    for f in $(ls $master_path/$prj-devel-*.tar.gz 2>/dev/null | \
+               egrep 'devel-[^-]*.tar.gz')
     do
 	tar xzf $f
 	ls results/*.rpm 2>/dev/null | egrep -v src.rpm | (while read ff; do chmod 644 $ff; mv $ff .; done) || true
