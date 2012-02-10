@@ -23,7 +23,8 @@ def parse_tarball_name(tarball):
     return (prj, area, arch)
 
 def main():
-    shutil.rmtree(staging_path)
+    if os.path.exists(staging_path):
+        shutil.rmtree(staging_path)
 
     for tarball in os.listdir(master_path):
         if tarball[-6:] != 'tar.gz':
