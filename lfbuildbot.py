@@ -353,10 +353,10 @@ class LSBReloadSDK(LSBBuildCommand):
     def _is_devel(self):
         "Figure out whether we're being called on a devel tree."
 
-        build_type = self.getProperty("build_type")
+        build_type = self.getProperty("build_type", "normal")
+        branch_name = self.getProperty("branch_name", "devel")
         return build_type == "devel" or \
-            (build_type == "normal" and 
-             self.getProperty("branch_name") == "devel")
+            (build_type == "normal" and branch_name == "devel")
 
     def _is_beta(self):
         "Figure out whether we're being called for a beta build."
