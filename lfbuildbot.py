@@ -175,8 +175,8 @@ class MultiScheduler(BaseScheduler):
 
         self.poller = reactor.callLater(10, self.poll)
 
-    def buildset_cb(ssid, builderNames, properties, reason):
-        self.addBuildsetForSourceStamp(self, ssid, reason=reason,
+    def buildset_cb(self, ssid, builderNames, properties, reason):
+        self.addBuildsetForSourceStamp(ssid, reason=reason,
                                        builderNames=builderNames,
                                        properties=properties)
 
