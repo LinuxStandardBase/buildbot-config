@@ -24,7 +24,7 @@ for prj in $projects; do
 
     if [ -f $master_path/$prj-devel-x86_64.tar.gz ]; then
         tar xzf $master_path/$prj-devel-x86_64.tar.gz
-	if [ -f results/*src.rpm ]; then
+	if [ $(ls results/*src.rpm 2>/dev/null | wc -l) -gt 0 ]; then
             mv results/*src.rpm .
 	    chmod 644 *src.rpm
 	fi
