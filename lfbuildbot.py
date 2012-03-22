@@ -67,8 +67,6 @@ class MultiJobFile:
             self.f.close()
 
         self.properties.setProperty("build_type", self.build_type, "Scheduler")
-        if self.build_type == "beta":
-            self.properties.setProperty("result_tag", "-beta", "Scheduler")
 
         if not self.branch_name or not self.projects:
             raise JobParseError("missing information in job file")
@@ -238,9 +236,10 @@ class LSBBuildCommand(ShellCommand):
             self.setProperty("branch_name", calc_branch_name)
 
         try:
-            self.getProperty("build_type")
+            build_type = self.getProperty("build_type")
         except KeyError:
-            self.setProperty("build_type", self._calc_build_type())
+            build_type = self._calc_build_type()
+            self.setProperty("build_type", build_type)
 
         # Under certain circumstances, branch_name and branch can conflict.
         # Detect these situations and override the branch as needed.
@@ -249,6 +248,14 @@ class LSBBuildCommand(ShellCommand):
             new_branch = current_branch.replace(calc_branch_name,
                                                 set_branch_name)
             self.setProperty("branch", new_branch)
+
+        # Set result type, for the upload tarball name.
+
+        if build_type == "normal":
+            result_type = calc_branch_name
+        else:
+            result_type = calc_branch_name + "-" + build_type
+        self.setProperty("result_type", result_type)
 
     def start(self):
         self._set_build_props()
