@@ -251,10 +251,9 @@ class LSBBuildCommand(ShellCommand):
 
         # Set result type, for the upload tarball name.
 
-        if build_type == "normal":
-            result_type = calc_branch_name
-        else:
-            result_type = calc_branch_name + "-" + build_type
+        result_type = calc_branch_name
+        if build_type and build_type != "normal":
+            result_type = result_type + "-" + build_type
         self.setProperty("result_type", result_type)
 
     def start(self):
