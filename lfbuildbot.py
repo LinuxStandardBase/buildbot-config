@@ -309,15 +309,15 @@ class LSBConfigureAppbat(LSBBuildCommand):
         kwargs["makeargs"] = False
         LSBBuildCommand.__init__(self, **kwargs)
 
-    def start(self):
-        self._set_build_props()
+    def setupEnvironment(self, cmd):
+        LSBBuildCommand.setupEnvironment(self, cmd)
 
+        if cmd.args['env'] is None:
+            cmd.args['env'] = {}
         for env_item in self._get_make_args():
             if "=" in env_item:
                 (name, value) = env_item.split("=")
-                self.build.slaveEnvironment[name] = value
-
-        LSBBuildCommand.start(self)
+                cmd.args['env'][name] = value
 
 # Reload the SDK.  This class figures out what SDK we need (devel, stable,
 # or beta) and installs it.
