@@ -301,6 +301,8 @@ PORT_KEY = 'buildbot_port'
 DRYRUN_KEY = 'buildbot_dry_run'
 PQM_KEY = 'buildbot_pqm'
 SEND_BRANCHNAME_KEY = 'buildbot_send_branch_name'
+LOGIN_KEY = 'buildbot_login'
+PASSWD_KEY = 'buildbot_password'
 
 PUSH_VALUE = 'push'
 COMMIT_VALUE = 'commit'
@@ -371,11 +373,18 @@ class ThreadedResolver(twisted.internet.base.ThreadedResolver):
 def send_change(branch, old_revno, old_revid, new_revno, new_revid, hook):
     config = branch.get_config()
     server = config.get_user_option(SERVER_KEY)
+    login = config.get_user_option(LOGIN_KEY)
+    passwd = config.get_user_option(PASSWD_KEY)
     if not server:
         bzrlib.trace.warning(
             'bzr_buildbot: ERROR.  If %s is set, %s must be set',
             HOOK_KEY, SERVER_KEY)
         return
+    if not login or not passwd:
+        bzrlib.trace.warning(
+            'bzr_buildbot: User and/or password not set, using defaults')
+        login = 'change'
+        passwd = 'changepw'
     change = generate_change(
         branch, old_revno, old_revid, new_revno, new_revid,
         blame_merge_author=_is_true(config, PQM_KEY))
@@ -403,7 +412,7 @@ def send_change(branch, old_revno, old_revid, new_revno, new_revid, hook):
     pbcf = twisted.spread.pb.PBClientFactory()
     reactor.connectTCP(server, port, pbcf)
     deferred = pbcf.login(
-        twisted.cred.credentials.UsernamePassword('change', 'changepw'))
+        twisted.cred.credentials.UsernamePassword(login, passwd))
 
     def sendChanges(remote):
         """Send changes to buildbot."""
