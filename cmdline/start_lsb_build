@@ -1,0 +1,62 @@
+#!/usr/bin/python
+
+# start_lsb_build: trigger a build in LSB's buildbot
+
+import sys
+import os
+import time
+import optparse
+import StringIO
+
+default_arch_list = "x86,x86_64,ia64,ppc32,ppc64"
+default_spool_dir = "/opt/buildbot/jobdir"
+
+def main():
+
+    # Get options and arguments for the build to start.
+
+    option_parser = optparse.OptionParser(
+        usage="Usage: %prog [options] branch_name project [project ...]")
+    option_parser.add_option("-t", "--build-type", dest="build_type",
+                             help="build type TYPE (devel, production, beta)",
+                             metavar="TYPE")
+    option_parser.add_option("-a", "--architectures", dest="archs",
+                             help="comma-separated architecture list",
+                             metavar="ARCHS", default=default_arch_list)
+    option_parser.add_option("--tag", dest="tag", metavar="TAG",
+                             help="version control tag to use")
+    option_parser.add_option("--spool-dir", dest="spool_dir", metavar="DIR",
+                             help="use different spool directory",
+                             default=default_spool_dir)
+    option_parser.add_option("--stdout", action="store_true", dest="stdout",
+                             help="output job file to stdout instead of saving",
+                             default=False)
+    (options, args) = option_parser.parse_args()
+
+    branch_name = args[0]
+    projects = ','.join(args[1:])
+
+    # Create the job file in memory.
+
+    jobfile = StringIO.StringIO()
+    jobfile.write("projects=%s\n" % projects)
+    jobfile.write("branch_name=%s\n" % branch_name)
+    if options.archs:
+        jobfile.write("architectures=%s\n" % options.archs)
+    if options.build_type:
+        jobfile.write("build_type=%s\n" % options.build_type)
+    if options.tag:
+        jobfile.write("tag=%s\n" % options.tag)
+
+    # Write the job file to the spool directory.
+
+    if options.stdout:
+        output_file = sys.stdout
+    else:
+        output_file = open(os.path.join(options.spool_dir, 
+                                        "jobfile.%d" % time.time()), "w")
+    output_file.write(jobfile.getvalue())
+    output_file.close()
+
+if __name__ == "__main__":
+    main()
