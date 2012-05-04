@@ -18,7 +18,8 @@ def main():
     option_parser = optparse.OptionParser(
         usage="Usage: %prog [options] branch_name project [project ...]")
     option_parser.add_option("-t", "--build-type", dest="build_type",
-                             help="build type TYPE (devel, production, beta)",
+                             help="set the build type (devel, production, "
+                                  "beta)",
                              metavar="TYPE")
     option_parser.add_option("-a", "--architectures", dest="archs",
                              help="comma-separated architecture list "
@@ -30,7 +31,8 @@ def main():
                              help="use different spool directory",
                              default=default_spool_dir)
     option_parser.add_option("--stdout", action="store_true", dest="stdout",
-                             help="output job file to stdout instead of saving",
+                             help="output job file to stdout instead of "
+                                  "writing to spool dir",
                              default=False)
     (options, args) = option_parser.parse_args()
 
