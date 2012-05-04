@@ -376,12 +376,13 @@ class BzrLsbMaildirSource(BzrLaunchpadEmailMaildirSource):
         match = re.search(r'^\[Lsb-messages\] (\S+) r(\d+): (.+)$',
                           subject.strip())
         if match:
-            del m['subject']
-            m['subject'] = "[Branch %s] Rev %s: %s" % (match.group(1),
-                                                       match.group(2),
-                                                       match.group(3))
+            raw_branch = match.group(1)
+            if raw_branch in self.branchMap:
+                del m['subject']
+                m['subject'] = "[Branch %s] Rev %s: %s" % (raw_branch,
+                                                           match.group(2),
+                                                           match.group(3))
 
-            return BzrLaunchpadEmailMaildirSource.parse(self, m, prefix)
+                return BzrLaunchpadEmailMaildirSource.parse(self, m, prefix)
 
-        else:
-            return None
+        return None
