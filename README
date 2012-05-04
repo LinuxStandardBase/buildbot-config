@@ -18,9 +18,6 @@ currently four types of files here:
  - master-side support scripts, that do things like assemble the
    snapshots directory and build repositories
 
- - the files in slavescripts, which are expected to be copied to every
-   build slave somewhere in the PATH
-
 Setup
 -----
 
@@ -31,9 +28,16 @@ definition.
 Slave setup
 -----------
 
-NOTE: slave setup is transitioning to Puppet as well.  The following
-procedure documents how to add a build slave on a non-Puppet machine,
-but for best results, use Puppet to deploy the build slave setup.
+Slave setup is transitioning to Puppet as well.  To add a slave via
+Puppet, simply add "include buildbot::slave" to that node's Puppet
+configuration.  Once Puppet has had a chance to set up the slave, be
+sure and trigger "build-sdk" and "libbat" for that slave's
+architecture; this will ensure that all the necessary dependencies for
+proper builds are present.
+
+The following procedure documents how to add a build slave on a
+non-Puppet machine, but for best results, use Puppet to deploy the
+build slave setup.
 
 While the masters are expected to be more-or-less permanent, the
 slaves are completely replaceable.  Here's the procedure for setting
@@ -85,8 +89,9 @@ buildbot's crontab should do the trick:
 
 10. Start the slave.
 
-11. Force a build of the "build-sdk" job for that architecture.  This
-ensures that there's a snapshot SDK available for snapshot builds.
+11. Force a build of the "build-sdk" and "libbat" jobs for that
+architecture.  This ensures that all build dependencies are present on
+the slave.
 
 Using the configuration
 -----------------------
@@ -120,11 +125,21 @@ MultiScheduler
 
 Because the LSB builder has so many builds, all related in certain
 ways, we provide a system for starting multiple builds at once with a
-single action.
+single action.  Currently, this takes the form of a spooler directory,
+which is watched for spool files describing a build request.
 
-Currently, this takes the form of a spooler directory, which is
-watched for spool files describing a build request.  The files consist
-of multiple lines of property=value pairs.  Properties recognized:
+The easiest way to take advantage of the MultiSchedule is with the
+provided command-line utility, "start_lsb_build".  This utility can
+create properly-formatted job files using simple commands.  To learn
+how to use start_lsb_build, run it with the -h parameter, which will
+print a short help message.  The utility can auto-submit the job (and
+does so by default), or it can be used to create job files that can be
+submitted later by copying them to the spool directory.
+
+There are some cases where direct manipulation of spool files is
+necessary; for example, when submitting jobs automatically in slightly
+different ways depending on the context.  The files consist of
+multiple lines of property=value pairs.  Properties recognized:
 
  branch_name - Name of the bzr branch directory containing the projects
  in question.  For example, if a project to build is found at
@@ -147,14 +162,6 @@ of multiple lines of property=value pairs.  Properties recognized:
  build_type - the type of build being done.  This must be "normal",
  "production", or "beta".
 
-A minimal request file must contain the "projects" property.  The rest
-of the properties default to a normal build, against the tip of the
-"devel" branch for each project, for all architectures.
-
-At some point, scripts will be provided to create and submit build
-requests from the command line.  Until this is available, build
-request files must be built manually, and copied to the job directory
-specified in the MultiScheduler's configuration (currently
-/var/buildbot).  It is not recommended to create the files in the
-spool directory, as the scheduler will attempt to parse and delete
-them immediately upon seeing them.
+A minimal request file must contain the "projects" and "branch_name"
+properties.  The rest of the properties default to a normal build, for
+all architectures.
