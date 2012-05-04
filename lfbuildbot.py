@@ -20,6 +20,7 @@ from buildbot.steps.master import MasterShellCommand
 from buildbot.schedulers.base import BaseScheduler
 from buildbot.schedulers.triggerable import Triggerable
 from buildbot.sourcestamp import SourceStamp
+from buildbot.changes.mail import BzrLaunchpadEmailMaildirSource
 
 # Helper function.  This takes a branch as passed into buildbot, and
 # pulls out just the LSB version part.  If it can't figure out the
@@ -351,3 +352,36 @@ class LSBReloadSDK(LSBBuildCommand):
         else:
             self.setCommand(['reset-sdk'])
         LSBBuildCommand.start(self)
+
+# We use emailed commit messages to trigger builds now.  It turns out
+# that upstream's Launchpad email parser is almost a perfect match
+# for the commit emails bzr-hookless creates... except for a few little
+# tweaks.  So, instead of reinventing the wheel, we wrap the Launchpad
+# parser with something that converts the few little problems into
+# something the parser can understand.  We also implement slightly more
+# robust rules for ignoring emails that aren't relevant.  Note that the
+# original parser can handle a missing branchMap in some places, but
+# those will almost certainly be wrong here; consider branchMap to be
+# mandatory.
+
+class BzrLsbMaildirSource(BzrLaunchpadEmailMaildirSource):
+    name = "bzr hookless message (LSB-specific)"
+
+    def parse(self, m, prefix=None):
+        "Parse branch notification messages sent by bzr-hookless-email."
+
+        # Right now, the Subject line is the only troublesome part.
+
+        subject = m['subject']
+        match = re.search(r'^\[Lsb-messages\] (\S+) r(\d+): (.+)$',
+                          subject.strip())
+        if match:
+            del m['subject']
+            m['subject'] = "[Branch %s] Rev %s: %s" % (match.group(1),
+                                                       match.group(2),
+                                                       match.group(3))
+
+            return BzrLaunchpadEmailMaildirSource.parse(self, m, prefix)
+
+        else:
+            return None
