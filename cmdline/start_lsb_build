@@ -21,7 +21,8 @@ def main():
                              help="build type TYPE (devel, production, beta)",
                              metavar="TYPE")
     option_parser.add_option("-a", "--architectures", dest="archs",
-                             help="comma-separated architecture list",
+                             help="comma-separated architecture list "
+                                  "(default=%default)",
                              metavar="ARCHS", default=default_arch_list)
     option_parser.add_option("--tag", dest="tag", metavar="TAG",
                              help="version control tag to use")
