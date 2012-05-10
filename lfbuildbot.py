@@ -373,15 +373,14 @@ class BzrLsbMaildirSource(BzrLaunchpadEmailMaildirSource):
         # Right now, the Subject line is the only troublesome part.
 
         subject = m['subject']
-        match = re.search(r'^\[Lsb-messages\] (\S+) r(\d+): (.+)',
+        match = re.search(r'^\[Lsb-messages\] (\S+) r(\d+):',
                           subject.strip())
         if match:
             raw_branch = match.group(1)
             if raw_branch in self.branchMap:
                 del m['subject']
-                m['subject'] = "[Branch %s] Rev %s: %s" % (raw_branch,
-                                                           match.group(2),
-                                                           match.group(3))
+                m['subject'] = "[Branch %s] Rev %s:" % (raw_branch,
+                                                        match.group(2))
 
                 return BzrLaunchpadEmailMaildirSource.parse(self, m, prefix)
 
