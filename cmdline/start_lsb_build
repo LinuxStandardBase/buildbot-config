@@ -39,6 +39,14 @@ def main():
     branch_name = args[0]
     projects = ','.join(args[1:])
 
+    # Do some argument sanity-checking.
+
+    if len(args) < 2:
+        raise RuntimeError, \
+            "must specify a branch name and one or more projects"
+    if branch_name != "devel" and branch_name[0] not in ['3', '4', '5']:
+        raise RuntimeError, "unrecognized branch name"
+
     # Create the job file in memory.
 
     jobfile = StringIO.StringIO()
@@ -62,4 +70,8 @@ def main():
     output_file.close()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except RuntimeError:
+        sys.stderr.write(str(sys.exc_info()[1]) + "\n")
+        sys.exit(1)
