@@ -13,9 +13,8 @@ UPLOAD_TARGET=/srv/ftp
 BZR_PROGRESS_BAR=none
 FTP_ROOT=$TOP_PATH
 BUILD_DEBIAN=yes
-DEB_PKG_CACHE=/opt/buildbot/debcache-snapshot
 LSB_VERSION=snapshot
-export BZR_PROGRESS_BAR FTP_ROOT BUILD_DEBIAN DEB_PKG_CACHE LSB_VERSION
+export BZR_PROGRESS_BAR FTP_ROOT BUILD_DEBIAN LSB_VERSION
 
 # Make sure only one of this script runs at a time.
 
