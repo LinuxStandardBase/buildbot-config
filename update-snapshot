@@ -73,8 +73,8 @@ if [ -d $TOP_PATH/$STAGING_PATH ]; then
     cd $TOP_PATH/$STAGING_PATH
     rsync -a --delete * $UPLOAD_TARGET/$STAGING_PATH
 fi
-cd $TOP_PATH/$REPOSITORY_PATH/yum
-rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/yum
+cd $TOP_PATH/$REPOSITORY_PATH/rpm
+rsync -a --delete lsb-snapshot $UPLOAD_TARGET/pub/lsb/repositories/rpm
 if [ -d $TOP_PATH/$REPOSITORY_PATH/debian ]; then
     cd $TOP_PATH/$REPOSITORY_PATH/debian
     rsync -a --delete pkgs-snapshot $UPLOAD_TARGET/pub/lsb/repositories/debian
