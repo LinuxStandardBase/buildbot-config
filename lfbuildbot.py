@@ -325,6 +325,10 @@ class LSBConfigureAppbat(LSBBuildCommand):
 class LSBReloadSDK(LSBBuildCommand):
     command = ["placeholder"]
 
+    def __init__(self, slave_id=None, **kwargs):
+        self._configured_slave_id = slave_id
+        LSBBuildCommand.__init__(self, **kwargs)
+
     def _is_devel(self):
         "Figure out whether we're being called on a devel tree."
 
@@ -341,14 +345,19 @@ class LSBReloadSDK(LSBBuildCommand):
     def start(self):
         self._set_build_props()
 
-        m = re.search(r'-([^\-]+)$', self.getProperty("buildername"))
-        arch = m.group(1)
+        if self._configured_slave_id:
+            slave_id = self._configured_slave_id
+        else:
+            # Default slave ID is the architecture name, which is always
+            # tacked on to the end of the builder name for regular builders.
+            m = re.search(r'-([^\-]+)$', self.getProperty("buildername"))
+            slave_id = m.group(1)
 
         if self._is_beta():
             self.setCommand(['reset-sdk', '--beta'])
         elif self._is_devel():
             self.setCommand(['update-sdk',
-                             '../../build-sdk-%s/sdk-results' % arch])
+                             '../../build-sdk-%s/sdk-results' % slave_id])
         else:
             self.setCommand(['reset-sdk'])
         LSBBuildCommand.start(self)
