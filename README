@@ -4,6 +4,28 @@ LINUX FOUNDATION BUILDBOT CONFIG
 This information should help people understand and work with the Linux
 Foundation's buildbot setup.
 
+Structure
+---------
+
+Our configuration controls builds for two projects, including three
+different build slave configurations.
+
+One of the projects is currently defunct, and thus not activated:
+Moblin.  Should it need to be reactivated for some reason, it should
+be tested extensively, as a number of things have changed in buildbot,
+in our server setup, and so on.  At some point, the Moblin build setup
+(both master and slave) will likely be removed.
+
+The other project is active: LSB.  For LSB, there are two kinds of
+builds: regular project builds, and devchk builds.  Devchk is
+"special", because it is essentially a comparison between what the LSB
+provides and what various Linux distributions provide.  Regular builds
+need to be done with a minimal setup, but devchk builds need to
+include a number of extra native build tools to compare with the LSB.
+
+Both devchk and regular builds are controlled with a single buildbot
+master for LSB.
+
 Contents
 --------
 
@@ -25,73 +47,81 @@ Setting up the buildbot master is now done via Puppet.  In the LSB's
 Puppet configuration, add "include buildbot::master" to the node's
 definition.
 
-Slave setup
------------
+Regular slave setup
+-------------------
 
-Slave setup is transitioning to Puppet as well.  To add a slave via
-Puppet, simply add "include buildbot::slave" to that node's Puppet
+Slave setup is done via Puppet as well.  To add a slave via Puppet,
+simply add "include buildbot::slave" to that node's Puppet
 configuration.  Once Puppet has had a chance to set up the slave, be
 sure and trigger "build-sdk" and "libbat" for that slave's
 architecture; this will ensure that all the necessary dependencies for
 proper builds are present.
 
-The following procedure documents how to add a build slave on a
-non-Puppet machine, but for best results, use Puppet to deploy the
-build slave setup.
+Build slaves contain no permanent configuration, and so can be deleted
+and rebuilt at will.  This can be done by stopping the build slave
+(with "service buildslave stop") and deleting everything under
+/opt/buildbot; Puppet will recreate the entire build slave setup and
+restart it.
 
-While the masters are expected to be more-or-less permanent, the
-slaves are completely replaceable.  Here's the procedure for setting
-up a new slave:
+Devchk slave setup
+------------------
 
-1.  Install the tools needed for building all projects in the SDK on
-the slaves.  At minimum, that will include bzr and the base
-development tools.
+Devchk slaves are also handled by Puppet, but since they are not tied
+to particular architectures, setting them up requires a bit of
+configuration on the master as well.
 
-2.  Create a "buildbot" user.  Make sure the account is locked however
-that works for the distribution being used.
+Here is the procedure for setting up a devchk build slave:
 
-3.  Install buildbot on each slave.  This will likely require
-installing Twisted.  Be sure to install the core, Mail, Web, and
-Words.
+ - Install a machine (virtual or real) with the preferred distribution
+   and architecture, and add it to the LSB Puppet setup.
 
-4.  Create a slave instance according to the buildbot documentation as
-the buildbot user.  Be sure and pass the argument "--umask=022" to the
-create-slave command, so the permissions on the resulting packages
-aren't too restrictive.
+ - Choose an identifier for the build slave.  It should be unique
+   among the devchk build slaves, and should give some indication of
+   what it's running.  For example, a Fedora build slave on x86 could
+   be identified as "fedora-x86".
 
-5.  Give password-less access via sudo to the rpm command for the
-buildbot user.  The builds will require the buildbot to install and
-remove packages.  Something like this should do:
+ - Choose a password for the build slave to identify itself to the
+   master.  I recommend using 'pwgen -s 16' to generate a strong
+   password.
 
-buildbot ALL=NOPASSWD: /bin/rpm
+ - I also strongly recommend that the password not be stored in the
+   main puppet configuration in plaintext.  We maintain a special
+   "puppet-lsb-secret" configuration for passwords and the like.
+   Unfortunately, adding a password here requires someone with admin
+   access to the master, and may not be possible.  If it is, add the
+   password to the "buildbotpw" module in puppet-lsb-secret as a
+   variable.
 
-6.  Copy the scripts from the puppet-lsb project, under
-"modules/buildbot/files/slavescripts", into a directory on the default
-system path.
+ - Add the identifier to the list in lsb_master.cfg called
+   "devchk_build_slaves".
 
-7.  Download a copy of the current released LSB SDK bundle tarball to
-the slave, and symlink it to $HOME/lsb-released-sdk.tar.gz (for the
-buildbot user).
+ - In the Puppet config, in "modules/buildbot/manifests/devchk.pp",
+   add the identifier and password to the definitions for the
+   "masteruser" and "masterpw" variables.  These are tied to the
+   distribution name, version, and architecture, separated by dashes.
+   They must match exactly; you can get the identifiers to match by
+   running "facter" on your new build slave.  For the password, enter
+   the variable from buildbotpw if you set that, or enter the bare
+   text password if you could not.  Note that "masteruser" expects the
+   identifier to be prefixed with "devchk-".
 
-8.  If there's a beta in progress, download a copy of the current beta
-SDK bundle tarball to the slave, and symlink it to
-$HOME/lsb-beta-sdk.tar.gz (again, for the buildbot user).  If this is
-not done, beta builds may not work.  As an alternative, if the SDK
-itself is not in beta, symlink the production SDK to the beta
-filename.
+ - Also in the Puppet config, add the username and password to the
+   "/opt/buildbot/slave_pwds" definition in
+   modules/buildbot/manifests/master.pp.  Put the new build slave
+   user/password on its own line, separated by a colon.  Use the
+   buildbotpw variable for the password you defined above if
+   possible.  The most important thing is that the user and password
+   in the master's slave_pwds should match the user and password
+   defined above for "masteruser" and "masterpw".
 
-9.  Add the command to start the slave on reboot.  If you installed
-buildbot on the slave via a distro package, this may be set up
-already; see your distro's buildbot docs.  If not, a line like this in
-buildbot's crontab should do the trick:
+ - Finally, add "include buildbot::devchk" for the per-node Puppet
+   configuration for the build slave.
 
-@reboot buildbot start /path/to/slave
+ - Commit the changes, and restart the LSB build master.
 
-10. Start the slave.
-
-11. Force a build of the "build-sdk" and "libbat" jobs for that
-architecture.  This ensures that all build dependencies are present on
-the slave.
+ - Once the new build slave is completely configured by Puppet and
+   online, trigger the "build-sdk" job for that build slave, to ensure
+   that the slave will have a SDK to test against.
 
 Using the configuration
 -----------------------
