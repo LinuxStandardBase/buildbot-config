@@ -328,6 +328,7 @@ class LSBReloadSDK(LSBBuildCommand):
     def __init__(self, slave_id=None, **kwargs):
         self._configured_slave_id = slave_id
         LSBBuildCommand.__init__(self, **kwargs)
+        self.addFactoryArguments(slave_id=slave_id)
 
     def _is_devel(self):
         "Figure out whether we're being called on a devel tree."
