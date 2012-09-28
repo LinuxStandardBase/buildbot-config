@@ -145,7 +145,7 @@ class MultiJobFile:
                     if builder in self.devchk_builders:
                         new_builders.append(builder)
                     else:
-                        raise JobParseError("invalid builder:" + builder)
+                        raise JobParseError("invalid builder: " + builder)
                 self.devchk_builders = new_builders
             else:
                 raise JobParseError("invalid key: " + name)

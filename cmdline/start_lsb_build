@@ -12,7 +12,7 @@ default_arch_list = "x86,x86_64,ia64,ppc32,ppc64"
 default_spool_dir = "/opt/buildbot/jobdir"
 default_devchk_builders = \
     [x.strip() for x in open("/opt/buildbot/buildbot-config/devchk_build_slave_list")
-     if x]
+     if x].join(",")
 
 def main():
 
@@ -31,7 +31,7 @@ def main():
     option_parser.add_option("-d", "--devchk-builders", dest="devchk_builders",
                              help="comma-separated devchk builder ID list "
                                   "(default=%default)",
-                             metavar="DEVCHK", default=default_devchk_builders)
+                             metavar="ID", default=default_devchk_builders)
     option_parser.add_option("--tag", dest="tag", metavar="TAG",
                              help="version control tag to use")
     option_parser.add_option("--spool-dir", dest="spool_dir", metavar="DIR",
