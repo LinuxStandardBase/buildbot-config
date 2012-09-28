@@ -11,8 +11,10 @@ import StringIO
 default_arch_list = "x86,x86_64,ia64,ppc32,ppc64"
 default_spool_dir = "/opt/buildbot/jobdir"
 default_devchk_builders = \
-    [x.strip() for x in open("/opt/buildbot/buildbot-config/devchk_build_slave_list")
-     if x].join(",")
+    ",".join(
+    [x.strip() 
+     for x in open("/opt/buildbot/buildbot-config/devchk_build_slave_list") 
+     if x])
 
 def main():
 
