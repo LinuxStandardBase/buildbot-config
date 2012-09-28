@@ -45,7 +45,8 @@ class JobParseError(Exception):
     pass
 
 class MultiJobFile:
-    def __init__(self, path, repos, archs, indep_prj, indep_arch, prop):
+    def __init__(self, path, repos, archs, indep_prj, indep_arch,
+                 devchk_builders, prop):
         self.tag = None
         self.projects = []
         self.branch_name = None
@@ -56,6 +57,7 @@ class MultiJobFile:
         self.archs = archs
         self.indep_prj = indep_prj
         self.indep_arch = indep_arch
+        self.devchk_builders = devchk_builders
 
         try:
             self.f = open(self.path)
@@ -71,8 +73,16 @@ class MultiJobFile:
 
         if not self.branch_name or not self.projects:
             raise JobParseError("missing information in job file")
+        if "devchk" in self.projects and len(self.projects) > 1:
+            raise JobParseError("cannot mix devchk and regular build requests")
         if self.build_type not in ("normal", "production", "devel", "beta"):
             raise JobParseError("invalid build type: " + self.build_type)
+
+    def get_repo(self, project_name):
+        if project_name in self.repos and self.repos[project_name]:
+            return self.repos[project_name]
+        else:
+            return project_name
 
     def __iter__(self):
         if self.tag:
@@ -81,22 +91,33 @@ class MultiJobFile:
             revision = "-1"
 
         for prj in self.projects:
-            if prj in self.repos and self.repos[prj]:
-                repo = self.repos[prj]
-            else:
-                repo = prj
-
             if prj in self.indep_prj:
                 archs = [self.indep_arch]
             else:
                 archs = self.archs
 
-            for arch in archs:
-                builderNames = ["%s-%s" % (prj, arch)]
-                branch = "lsb/%s/%s" % (self.branch_name, repo)
-                ss = SourceStamp(branch, revision, None, None)
-                yield (ss, builderNames, self.properties,
-                       "MultiScheduler job")
+            # XXX: SDK builds are hybrids, so we should allow them
+            #      to be tagged to both builders and archs.  To avoid
+            #      confusion, we just trigger the SDK build for devchk
+            #      builders as part of the devchk build itself.  We should
+            #      probably make this more consistent.
+            if prj == "devchk":
+                for build in ["build-sdk", "devchk"]:
+                    repo = self.get_repo(build)
+                    for builder in self.devchk_builders:
+                        builderNames = ["%s-%s" % (build, builder)]
+                        branch = "lsb/%s/%s" % (self.branch_name, repo)
+                        ss = SourceStamp(branch, revision, None, None)
+                        yield (ss, builderNames, self.properties,
+                               "MultiScheduler job")
+            else:
+                repo = self.get_repo(prj)
+                for arch in archs:
+                    builderNames = ["%s-%s" % (prj, arch)]
+                    branch = "lsb/%s/%s" % (self.branch_name, repo)
+                    ss = SourceStamp(branch, revision, None, None)
+                    yield (ss, builderNames, self.properties,
+                           "MultiScheduler job")
 
     def parse(self):
         for line in self.f:
@@ -115,7 +136,17 @@ class MultiJobFile:
                 for arch in value.split(","):
                     if arch in self.archs:
                         new_archs.append(arch)
+                    else:
+                        raise JobParseError("invalid architecture: " + arch)
                 self.archs = new_archs
+            elif name == "devchk_builders":
+                new_builders = []
+                for builder in value.split(","):
+                    if builder in self.devchk_builders:
+                        new_builders.append(builder)
+                    else:
+                        raise JobParseError("invalid builder:" + builder)
+                self.devchk_builders = new_builders
             else:
                 raise JobParseError("invalid key: " + name)
 
@@ -127,7 +158,7 @@ class MultiScheduler(BaseScheduler):
                      'indep_prj', 'properties')
 
     def __init__(self, name, builderNames, jobdir, repos, archs, indep_prj, 
-                 indep_arch, prop_dict={}):
+                 indep_arch, devchk_builders, prop_dict={}):
         BaseScheduler.__init__(self, name, builderNames, prop_dict)
         self.builderNames = builderNames
         self.jobdir = jobdir
@@ -135,6 +166,7 @@ class MultiScheduler(BaseScheduler):
         self.archs = archs
         self.indep_prj = indep_prj
         self.indep_arch = indep_arch
+        self.devchk_builders = devchk_builders
         self.poller = None
 
     def listBuilderNames(self):
@@ -159,6 +191,7 @@ class MultiScheduler(BaseScheduler):
                 try:
                     jobfile = MultiJobFile(f_full, self.repos, self.archs,
                                            self.indep_prj, self.indep_arch, 
+                                           self.devchk_builders,
                                            self.properties)
                     for (ss, builderNames, properties, reason) in jobfile:
                         d = ss.getSourceStampId(self.master)

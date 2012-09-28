@@ -186,6 +186,10 @@ multiple lines of property=value pairs.  Properties recognized:
  Using the previous example for "projects", the architecture would be
  "x86_64".
 
+ devchk_builders - Comma-separated list of devchk builder IDs to build
+ for.  So, for example, to limit a devchk build to just build on the
+ builder identified as "fedora-x86", this would be "fedora-x86".
+
  tag - the bzr tag name as passed to the "-r" parameter of bzr, minus
  the "tag:" specifier.
 
@@ -195,3 +199,16 @@ multiple lines of property=value pairs.  Properties recognized:
 A minimal request file must contain the "projects" and "branch_name"
 properties.  The rest of the properties default to a normal build, for
 all architectures.
+
+This utility can trigger devchk builds as well as regular builds.  To
+do this, set "projects" to "devchk".  You can limit which builds get
+built with the "devchk_builders" property.  Devchk builds are weird in
+two ways:
+
+ - You cannot specify both devchk and regular builds in the same job
+   file, because they are tied to completely different things
+   (architectures vs. devchk build slaves).
+
+ - There is no way to trigger the SDK build by itself for devchk build
+   slaves; the "devchk" project triggers both the SDK and devchk
+   builds.
