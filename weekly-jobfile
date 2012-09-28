@@ -1,2 +1,2 @@
-projects=build-sdk,app-checker,azov-qt4-tests,azov-xml2-tests,desktop-test,distribution-checker,libstdcpp-test,lsb-setup,lsb-xvfb,lsb-sigchk,lsbappchk-perl,lsbappchk-sh,makelsbpkg,misc-test,olver-core-tests,perl-test,printing-test,python-test,runtime-test,t2c-alsa-tests,t2c-cpp-tests,t2c-desktop-tests,t2c-runtime-tests,task-pkgs,xts5-test,lsbdev-runner,appbat,devchk
+projects=build-sdk,app-checker,azov-qt4-tests,azov-xml2-tests,desktop-test,distribution-checker,libstdcpp-test,lsb-setup,lsb-xvfb,lsb-sigchk,lsbappchk-perl,lsbappchk-sh,makelsbpkg,misc-test,olver-core-tests,perl-test,printing-test,python-test,runtime-test,t2c-alsa-tests,t2c-cpp-tests,t2c-desktop-tests,t2c-runtime-tests,task-pkgs,xts5-test,lsbdev-runner,appbat
 branch_name=devel
