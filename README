@@ -92,8 +92,8 @@ Here is the procedure for setting up a devchk build slave:
    password to the "buildbotpw" module in puppet-lsb-secret as a
    variable.
 
- - Add the identifier to the list in lsb_master.cfg called
-   "devchk_build_slaves".
+ - Add the identifier to the file named "devchk_build_slave_list" in
+   this project.
 
  - In the Puppet config, in "modules/buildbot/manifests/devchk.pp",
    add the identifier and password to the definitions for the
