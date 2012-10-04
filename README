@@ -43,17 +43,28 @@ currently four types of files here:
 Setup
 -----
 
-Setting up the buildbot master is now done via Puppet.  In the LSB's
-Puppet configuration, add "include buildbot::master" to the node's
-definition.
+Setting up the buildbot master is now done via Puppet.  Setting up
+systems to integrate with Puppet is beyond the scope of this document;
+see the Wiki page here for more information:
+
+https://wiki.linuxfoundation.org/en/LSB_Puppet
+
+Master
+------
+
+In the LSB's Puppet configuration, add "include buildbot::master" to
+the node's definition.
 
 Regular slave setup
 -------------------
 
-Slave setup is done via Puppet as well.  To add a slave via Puppet,
-simply add "include buildbot::slave" to that node's Puppet
-configuration.  Once Puppet has had a chance to set up the slave, be
-sure and trigger "build-sdk" and "libbat" for that slave's
+A regular build slave will need about 8G of disk space for just the
+build slave data, plus whatever the underlying system needs.
+
+Slave setup is done via Puppet, just like the build master.  To add a
+slave via Puppet, simply add "include buildbot::slave" to that node's
+Puppet configuration.  Once Puppet has had a chance to set up the
+slave, be sure and trigger "build-sdk" and "libbat" for that slave's
 architecture; this will ensure that all the necessary dependencies for
 proper builds are present.
 
@@ -73,7 +84,9 @@ configuration on the master as well.
 Here is the procedure for setting up a devchk build slave:
 
  - Install a machine (virtual or real) with the preferred distribution
-   and architecture, and add it to the LSB Puppet setup.
+   and architecture, and add it to the LSB Puppet setup.  A devchk
+   build slave needs whatever the distro's underlying minimum system
+   requirements are, plus about 1G disk space for the build slave.
 
  - Choose an identifier for the build slave.  It should be unique
    among the devchk build slaves, and should give some indication of
