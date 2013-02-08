@@ -391,8 +391,7 @@ class LSBReloadSDK(LSBBuildCommand):
         if self._is_beta():
             self.setCommand(['reset-sdk', '--beta'])
         elif self._is_devel():
-            self.setCommand(['update-sdk',
-                             '../../build-sdk-%s/sdk-results' % slave_id])
+            self.setCommand(['update-sdk'])
         else:
             self.setCommand(['reset-sdk'])
         LSBBuildCommand.start(self)
