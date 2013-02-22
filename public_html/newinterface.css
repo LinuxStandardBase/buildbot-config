@@ -1,0 +1,13 @@
+#status_table table tr td {
+    width: 8em;
+}
+
+#status_table table tr td a {
+    display: block;
+    width: 100%;
+    height: 100%
+}
+
+#status_table table tr td a:link {
+    text-decoration: none;
+}

@@ -1,6 +1,24 @@
 {% extends 'layout.html' %}
 {% import 'forms.html' as forms %}
 
+{% block head %}
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    {% if metatags %}
+      {{ metatags }}
+    {% endif %}
+    {% if refresh %}
+      <meta http-equiv="refresh" content="{{ refresh|e }}"/>
+    {% endif %}
+    <title>{{ pageTitle|e }}</title>
+    <link rel="stylesheet" href="{{ stylesheet }}" type="text/css" />
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="{{ path_to_root }}rss">
+    <link rel="shortcut icon" href="{{ path_to_root }}favicon.ico">
+
+  <script src="jquery-1.9.1.min.js"></script>
+  <script src="newinterface.js"></script>
+  <link rel="stylesheet" href="newinterface.css" type="text/css" />
+{% endblock %}
+
 {% block content %}
 
 <h1>Welcome to the Buildbot
@@ -17,6 +35,10 @@
 </h1>
 
 <div class="column">
+
+<div id="status_table"></div>
+
+<p>Other build information:</p>
 
 <ul>
   {% set item_class=cycler('alt', '') %}
