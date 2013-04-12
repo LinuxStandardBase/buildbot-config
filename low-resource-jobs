@@ -30,11 +30,16 @@ low_resource_slave_archs = ["s390", "s390x"]
 # build minus the arch-independent builds.
 canonical_slave = "lfbuild-x86"
 
+# Skip certain builders that are only there for building legacy
+# stable builds.
+skip_builds = ["azov-qt3-tests"]
+
 def get_build_list():
     build_list_source = urllib2.urlopen("%s/slaves/%s" % (toplevel_url,
                                                           canonical_slave))
     build_data = json.loads(build_list_source.read())
-    return [x[:x.rindex("-")] for x in build_data["builders"].keys()]
+    return [x[:x.rindex("-")] for x in build_data["builders"].keys()
+            if x not in skip_builds]
 
 def get_low_resource_slave_archs():
     # XXX: Read this from the buildbot config someday.
