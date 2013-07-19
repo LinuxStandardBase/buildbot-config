@@ -45,6 +45,12 @@ def get_low_resource_slave_archs():
     # XXX: Read this from the buildbot config someday.
     return low_resource_slave_archs
 
+def is_slave_building(arch):
+    slave_source = urllib2.urlopen("%s/slaves/lfbuild-%s"
+                                   % (toplevel_url, arch))
+    slave_data = json.loads(slave_source.read())
+    return "runningBuilds" in slave_data
+
 def get_last_build_time(arch, build):
     try:
         build_source = urllib2.urlopen("%s/builders/%s/builds/-1" 
@@ -68,6 +74,11 @@ def main():
     last_run_times = {}
     builds_to_run = []
     for slave_arch in get_low_resource_slave_archs():
+        # Don't add jobs if the builder is currently building.
+        if is_slave_building(slave_arch):
+            continue
+
+        # Find builder with oldest most recent build.
         last_run_times[slave_arch] = {}
         oldest_builds = []
         for build in builds:
@@ -81,6 +92,9 @@ def main():
             elif last_run_times[slave_arch][build] < \
                     last_run_times[slave_arch][oldest_builds[0]]:
                 oldest_builds = [build]
+
+        # Tack on oldest builder.  If several have the same age,
+        # pick one at random.
         if len(oldest_builds) == 1:
             builds_to_run.append((slave_arch, oldest_builds[0]))
         else:
