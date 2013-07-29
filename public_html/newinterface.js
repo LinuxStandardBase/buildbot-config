@@ -29,6 +29,7 @@ function get_timediff_description(start, end) {
 
 function load_slaveinfo(data) {
     var items = "";
+    var load_interval = 1;
     for (var item in data) {
         if (item.substr(0, 7) == "lfbuild") {
             var arch = item.substr(8);
@@ -40,7 +41,9 @@ function load_slaveinfo(data) {
             } else {
                 connecttype = "running";
                 var buildItem = data[item]["runningBuilds"][0];
-                update_builder_status(buildItem["builderName"]);
+                set_builder_refresh(buildItem["builderName"],
+                                    load_interval * 1000);
+                load_interval = load_interval + 1;
             }
 	    $("#heading-" + arch).html(arch + "<br />" + connecttype).attr("class", connecttype);
         }
@@ -59,6 +62,7 @@ function load_new_data() {
 function create_status_table(data) {
     var archs = new Array();
     var projects = new Object();
+    var load_interval = 1;
     for (var item in data) {
         if (item.substr(0, 7) == "lfbuild") {
             var arch = item.substr(8);
@@ -86,7 +90,8 @@ function create_status_table(data) {
             var builder = project + "-" + arch;
             if (arch in projects[project]) {
                 arch_item = projects[project][arch];
-                update_builder_status(builder);
+                set_builder_refresh(builder, load_interval * 1000);
+                load_interval = load_interval + 1;
             } else {
                 arch_item = "&nbsp;";
             }
