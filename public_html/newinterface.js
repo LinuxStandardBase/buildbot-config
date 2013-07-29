@@ -1,3 +1,5 @@
+var timers = new Object();
+
 function get_timediff_description(start, end) {
     var timediff = Math.floor(end - start);
     var timediff_byunit;
@@ -67,7 +69,7 @@ function create_status_table(data) {
                 if (!(project in projects)) {
                     projects[project] = new Object();
                 }
-                projects[project][arch] = "&nbsp;";
+                projects[project][arch] = "unknown";
             }
         }
     }
@@ -97,6 +99,29 @@ function create_status_table(data) {
     $("#status_table").html(status_table);
 }
 
+function set_builder_refresh(builder, interval) {
+    var currentTime = new Date().getTime();
+    var setNewTimer = false;
+
+    if (timers.hasOwnProperty(builder)) {
+        var timeoutHandle = timers[builder][0];
+        var timeoutFireTime = timers[builder][1];
+        if ((currentTime > timeoutFireTime) || 
+            ((currentTime + interval) < timeoutFireTime)) {
+            window.clearTimeout(timeoutHandle);
+            setNewTimer = true;
+        }
+    } else {
+        setNewTimer = true;
+    }
+
+    if (setNewTimer) {
+        timers[builder] = [window.setTimeout(update_builder_status, interval,
+                                             [builder]),
+                           currentTime + interval];
+    }
+}
+
 function update_builder_status(builder) {
     $.ajax({
             url: "json/builders/" + builder + "/builds/-1",
@@ -109,7 +134,7 @@ function update_builder_status(builder) {
                         + "/builds/" + data["number"] + "'>"
                         + step_name + "</a>";
                     status_class = "running";
-                    window.setTimeout(update_builder_status, 15000, [builder]);
+                    set_builder_refresh(builder, 15000);
                 } else if (data["results"] == 0) {
                     var build_end = data["times"][1];
                     var now = new Date().getTime() / 1000;
@@ -127,8 +152,7 @@ function update_builder_status(builder) {
                     } else {
                         nextrun = 30;
                     }
-                    window.setTimeout(update_builder_status, nextrun * 60000,
-                                      [builder]);
+                    set_builder_refresh(builder, nextrun * 60000);
                 } else if (data["results"] == 2) {
                     status_desc = "<a href='builders/" + builder
                         + "/builds/" + data["number"] + "'>"
@@ -143,18 +167,13 @@ function update_builder_status(builder) {
         });
 }
 
-function do_refresh() {
-    load_new_data();
-    window.setTimeout(do_refresh, 15000);
-}
-
 $(document).ready(function(data) {
         $.ajax({
                 url: "json/slaves/",
                 success: function(data) {
                     create_status_table(data);
                     load_slaveinfo(data);
-                    window.setTimeout(do_refresh, 15000);
+                    window.setInterval(load_new_data, 15000);
                 }
             });
     });
