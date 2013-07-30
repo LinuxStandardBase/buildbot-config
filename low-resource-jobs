@@ -49,7 +49,7 @@ def is_slave_building(arch):
     slave_source = urllib2.urlopen("%s/slaves/lfbuild-%s"
                                    % (toplevel_url, arch))
     slave_data = json.loads(slave_source.read())
-    return "runningBuilds" in slave_data
+    return len(slave_data["runningBuilds"]) > 0
 
 def get_last_build_time(arch, build):
     try:
