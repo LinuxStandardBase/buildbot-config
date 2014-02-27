@@ -147,6 +147,8 @@ class MultiJobFile:
                     else:
                         raise JobParseError("invalid builder: " + builder)
                 self.devchk_builders = new_builders
+            elif name == "lsb_version":
+                self.properties.setProperty("lsb_version", value, "Scheduler")
             else:
                 raise JobParseError("invalid key: " + name)
 
@@ -230,9 +232,13 @@ class LSBBuildCommand(ShellCommand):
         args = []
 
         branch_name = self.getProperty("branch_name")
-        found_lsb_version = re.match(r'^\d+\.\d+$', branch_name)
-        if found_lsb_version:
-            args.append("LSBCC_LSBVERSION=%s" % branch_name)
+        explicit_lsb_version = self.getProperty("lsb_version", None)
+        if explicit_lsb_version is None:
+            found_lsb_version = re.match(r'^\d+\.\d+$', branch_name)
+            if found_lsb_version:
+                args.append("LSBCC_LSBVERSION=%s" % branch_name)
+        else:
+            args.append("LSBCC_LSBVERSION=%s" % explicit_lsb_version)
 
         if self.getProperty("build_type") in ("beta", "production") \
                 or found_lsb_version:

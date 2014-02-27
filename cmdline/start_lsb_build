@@ -36,6 +36,8 @@ def main():
                              metavar="ID", default=default_devchk_builders)
     option_parser.add_option("--tag", dest="tag", metavar="TAG",
                              help="version control tag to use")
+    option_parser.add_option("--lsb-version", dest="lsb_version",
+                             metavar="VERSION", help="LSB version to target")
     option_parser.add_option("--spool-dir", dest="spool_dir", metavar="DIR",
                              help="use different spool directory",
                              default=default_spool_dir)
@@ -69,6 +71,8 @@ def main():
         jobfile.write("build_type=%s\n" % options.build_type)
     if options.tag:
         jobfile.write("tag=%s\n" % options.tag)
+    if options.lsb_version:
+        jobfile.write("lsb_version=%s\n" % options.lsb_version)
 
     # Write the job file to the spool directory.
 
