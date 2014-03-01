@@ -232,16 +232,16 @@ class LSBBuildCommand(ShellCommand):
         args = []
 
         branch_name = self.getProperty("branch_name")
-        explicit_lsb_version = self.getProperty("lsb_version", None)
-        if explicit_lsb_version is None:
+        lsb_version = self.getProperty("lsb_version", None)
+        if lsb_version is None:
             found_lsb_version = re.match(r'^\d+\.\d+$', branch_name)
             if found_lsb_version:
-                args.append("LSBCC_LSBVERSION=%s" % branch_name)
-        else:
-            args.append("LSBCC_LSBVERSION=%s" % explicit_lsb_version)
+                lsb_version = branch_name
+        if lsb_version:
+            args.append("LSBCC_LSBVERSION=%s" % lsb_version)
 
         if self.getProperty("build_type") in ("beta", "production") \
-                or found_lsb_version:
+                or lsb_version:
             source_revision = self.getProperty("revision")
             if isinstance(source_revision, str) and \
                source_revision[:4] == "tag:":
