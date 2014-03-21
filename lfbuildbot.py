@@ -233,6 +233,7 @@ class LSBBuildCommand(ShellCommand):
 
         branch_name = self.getProperty("branch_name")
         lsb_version = self.getProperty("lsb_version", None)
+        found_lsb_version = False
         if lsb_version is None:
             found_lsb_version = re.match(r'^\d+\.\d+$', branch_name)
             if found_lsb_version:
@@ -241,7 +242,7 @@ class LSBBuildCommand(ShellCommand):
             args.append("LSBCC_LSBVERSION=%s" % lsb_version)
 
         if self.getProperty("build_type") in ("beta", "production") \
-                or lsb_version:
+                or found_lsb_version:
             source_revision = self.getProperty("revision")
             if isinstance(source_revision, str) and \
                source_revision[:4] == "tag:":
