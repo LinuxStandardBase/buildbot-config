@@ -24,7 +24,7 @@ spool_dir = "/opt/buildbot/jobdir"
 
 # Ultimately, read this from the buildbot config.  For now, though,
 # it's easier just to hard-code.
-low_resource_slave_archs = ["s390", "s390x"]
+low_resource_slave_archs = []
 
 # We use the x86 build list for now, as it should have one of every
 # build minus the arch-independent builds.
