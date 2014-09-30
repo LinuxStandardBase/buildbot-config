@@ -8,7 +8,7 @@ import time
 import optparse
 import StringIO
 
-default_arch_list = "x86,x86_64,ia64,ppc32,ppc64"
+default_arch_list = "x86,x86_64,ia64,ppc32,ppc64,s390,s390x"
 default_spool_dir = "/opt/buildbot/jobdir"
 default_devchk_builders = \
     ",".join(
