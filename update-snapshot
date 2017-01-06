@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 
 LOCKFILE_PATH=/opt/buildbot/update-snapshot.lock
 LASTUPDATE_PATH=/opt/buildbot/update-snapshot.lastupdate
@@ -54,7 +54,7 @@ $SCRIPT_PATH/update-snapshot-prj
 # Create snapshot repositories.
 
 cd $TOP_PATH
-bzr checkout http://bzr.linuxfoundation.org/lsb/devel/repogen
+bzr checkout -q http://bzr.linuxfoundation.org/lsb/devel/repogen
 cd repogen
 make -s snapshot
 make -s install-snapshot
